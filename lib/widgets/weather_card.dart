@@ -1,109 +1,135 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-class WeatherCard extends StatelessWidget {
+class WeatherCard extends StatefulWidget {
   final String location;
-  final int temperature;
-  final String weatherDescription;
-  final String backgroundImage;
 
-  const WeatherCard({
-    required this.location,
-    required this.temperature,
-    required this.weatherDescription,
-    required this.backgroundImage,
-  });
+  const WeatherCard({required this.location});
+
+  @override
+  _WeatherCardState createState() => _WeatherCardState();
+}
+
+class _WeatherCardState extends State<WeatherCard> {
+  late Future<Map<String, dynamic>> _weatherData;
+
+  @override
+  void initState() {
+    super.initState();
+    _weatherData = fetchWeatherData(widget.location);
+  }
+
+  Future<Map<String, dynamic>> fetchWeatherData(String location) async {
+    const String apiKey =
+        '9c70a4631add50cb22594b3934b54109'; // Replace with your API key
+    final String apiUrl =
+        'https://api.openweathermap.org/data/2.5/weather?q=$location&appid=$apiKey&units=metric';
+
+    final response = await http.get(Uri.parse(apiUrl));
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load weather data');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Stack(
-        children: [
-          // Background Image Container (smaller size)
-          Container(
-            height: 150, // Adjusted height for the card
-            decoration: BoxDecoration(
-              borderRadius:
-                  BorderRadius.circular(15), // Slightly smaller border radius
-              image: DecorationImage(
-                image: AssetImage(backgroundImage),
-                fit: BoxFit.cover, // Ensure image fits without stretching
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 5,
-                  offset: Offset(2, 2),
-                ),
-              ],
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _weatherData,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              'Error fetching weather data',
+              style: TextStyle(color: Colors.red),
             ),
-          ),
-          // Weather Information Overlay
-          Container(
-            height: 150, // Match the background container height
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              color: Colors.black
-                  .withOpacity(0.2), // Slightly dark overlay for contrast
-            ),
-            padding: EdgeInsets.all(12), // Slightly reduced padding
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          );
+        } else if (snapshot.hasData) {
+          final weather = snapshot.data!;
+          final temperature = weather['main']['temp'].toInt();
+          final description = weather['weather'][0]['description'];
+          final weatherIconCode = weather['weather'][0]['icon'];
+          final weatherIconUrl =
+              'http://openweathermap.org/img/wn/$weatherIconCode@2x.png';
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Stack(
               children: [
-                // Location Text Row
-                Row(
-                  children: [
-                    Icon(Icons.location_on,
-                        color: Colors.green[800],
-                        size: 22), // Smaller icon size
-                    SizedBox(width: 8), // Space between icon and text
-                    Text(
-                      location,
-                      style: GoogleFonts.nunito(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18, // Smaller font size for location
-                      ),
+                Container(
+                  height: 150,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    image: DecorationImage(
+                      image: NetworkImage(weatherIconUrl),
+                      fit: BoxFit.cover,
                     ),
-                  ],
-                ),
-                SizedBox(height: 8), // Adjust spacing
-                // Temperature Text
-                Text(
-                  "$temperature°C",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 35, // Smaller font size for temperature
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 5,
+                        offset: Offset(2, 2),
+                      ),
+                    ],
                   ),
                 ),
-                // Weather Description Text
-                Text(
-                  weatherDescription,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14, // Smaller font size for description
+                Container(
+                  height: 150,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    color: Colors.black.withOpacity(0.3),
+                  ),
+                  padding: EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.location_on,
+                              color: Colors.green[800], size: 22),
+                          SizedBox(width: 8),
+                          Text(
+                            widget.location,
+                            style: GoogleFonts.nunito(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        "$temperature°C",
+                        style: GoogleFonts.nunito(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 35,
+                        ),
+                      ),
+                      Text(
+                        description,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-          // Arrow Icon at the top-right corner of the stack (slightly lower)
-          Align(
-            alignment:
-                Alignment(1, -0.3), // Shift the arrow down a bit (Y: -0.3)
-            child: Padding(
-              padding: const EdgeInsets.all(18.0),
-              child: Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.white,
-                size: 18, // Smaller arrow icon size
-              ),
-            ),
-          ),
-        ],
-      ),
+          );
+        } else {
+          return Container();
+        }
+      },
     );
   }
 }

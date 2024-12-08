@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import '../widgets/plant_card.dart';
-import '../widgets/weather_card.dart';
+import '../widgets/weather_card.dart'; // Import your WeatherCard widget
 import 'package:google_fonts/google_fonts.dart';
 
 class HomeScreen extends StatelessWidget {
-  // Define a GlobalKey for the Scaffold
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey, // Assign the GlobalKey to Scaffold
+      key: _scaffoldKey,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -18,8 +17,7 @@ class HomeScreen extends StatelessWidget {
         leading: IconButton(
           icon: Icon(Icons.menu, color: Colors.white),
           onPressed: () {
-            _scaffoldKey.currentState
-                ?.openDrawer(); // Open the drawer using the key
+            _scaffoldKey.currentState?.openDrawer();
           },
         ),
         actions: [
@@ -44,45 +42,28 @@ class HomeScreen extends StatelessWidget {
             ListTile(
               leading: Icon(Icons.account_circle),
               title: Text('Profile'),
-              onTap: () {
-                // Navigate to profile screen
-                Navigator.pushNamed(context, '/profile');
-              },
+              onTap: () => Navigator.pushNamed(context, '/profile'),
             ),
             ListTile(
               leading: Icon(Icons.group),
               title: Text('Community'),
-              onTap: () {
-                // Navigate to community screen
-                Navigator.pushNamed(context, '/community');
-              },
+              onTap: () => Navigator.pushNamed(context, '/community'),
             ),
             ListTile(
               leading: Icon(Icons.settings),
               title: Text('Settings'),
-              onTap: () {
-                // Navigate to settings screen
-                Navigator.pushNamed(context, '/settings');
-              },
+              onTap: () => Navigator.pushNamed(context, '/settings'),
             ),
             ListTile(
               leading: Icon(Icons.exit_to_app),
               title: Text('Log Out'),
-              onTap: () {
-                // Log out action
-                Navigator.pop(context); // Close the drawer
-                // You can add your log out functionality here
-              },
+              onTap: () => Navigator.pop(context),
             ),
             Divider(),
-            // About section
             ListTile(
               leading: Icon(Icons.info),
               title: Text('About'),
-              onTap: () {
-                // Navigate to About screen
-                Navigator.pushNamed(context, '/about');
-              },
+              onTap: () => Navigator.pushNamed(context, '/about'),
             ),
           ],
         ),
@@ -91,20 +72,17 @@ class HomeScreen extends StatelessWidget {
         children: [
           Column(
             children: [
-              // Full Background Image Section
               Stack(
                 children: [
                   AspectRatio(
-                    aspectRatio:
-                        16 / 16, // Adjust the ratio to match your design
+                    aspectRatio: 16 / 16,
                     child: Container(
                       width: double.infinity,
-                      height: MediaQuery.of(context).size.height *
-                          0.4, // 40% of the screen height
+                      height: MediaQuery.of(context).size.height * 0.4,
                       decoration: BoxDecoration(
                         image: DecorationImage(
                           image: AssetImage('assets/images/gardening.jpg'),
-                          fit: BoxFit.cover, // Ensures no cropping of the image
+                          fit: BoxFit.cover,
                         ),
                       ),
                     ),
@@ -120,7 +98,7 @@ class HomeScreen extends StatelessWidget {
                           style: GoogleFonts.cabin(
                             fontSize: 47,
                             fontWeight: FontWeight.bold,
-                            color: Colors.green[970],
+                            color: Colors.green[900],
                           ),
                         ),
                         SizedBox(height: 12),
@@ -130,13 +108,11 @@ class HomeScreen extends StatelessWidget {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
                             ),
-                            minimumSize: Size(50, 50), // Increase button height
+                            minimumSize: Size(50, 50),
                             padding: EdgeInsets.symmetric(
                                 vertical: 25, horizontal: 38),
                           ),
-                          onPressed: () {
-                            // Add plant action
-                          },
+                          onPressed: () {},
                           icon: Icon(Icons.add, color: Colors.white),
                           label: Text("Add a plant",
                               style:
@@ -147,8 +123,6 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ],
               ),
-
-              // Main Content Section
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
@@ -181,11 +155,8 @@ class HomeScreen extends StatelessWidget {
                         SizedBox(height: 16),
                         Padding(
                           padding: const EdgeInsets.all(16.0),
-                          child: const WeatherCard(
-                            location: "Mumbai, India",
-                            temperature: 20,
-                            weatherDescription: "Mostly clear",
-                            backgroundImage: "assets/images/Weather_bg.jpg",
+                          child: WeatherCard(
+                            location: "Himachal Pradesh",
                           ),
                         ),
                       ],
@@ -194,39 +165,6 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-          Positioned(
-            bottom: 3,
-            left: MediaQuery.of(context).size.width / 2 - 28, // Center FAB
-            child: FloatingActionButton(
-              backgroundColor: Colors.orange,
-              onPressed: () {},
-              child: Icon(Icons.add, color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.orange,
-        unselectedItemColor: Colors.grey,
-        currentIndex: 0,
-        onTap: (index) {},
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.local_florist),
-            label: 'My Plant',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.healing),
-            label: 'Diagnose',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.schedule),
-            label: 'Schedule',
           ),
         ],
       ),
