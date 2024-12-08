@@ -75,7 +75,7 @@ class HomeScreen extends StatelessWidget {
               },
             ),
             Divider(),
-            // About section or any other options you want to add
+            // About section
             ListTile(
               leading: Icon(Icons.info),
               title: Text('About'),
