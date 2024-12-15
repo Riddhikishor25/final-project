@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../widgets/plant_card.dart';
-import '../widgets/weather_card.dart'; // Import your WeatherCard widget
+import '../widgets/weather_card.dart'; // Importing WeatherCard widget
 import 'package:google_fonts/google_fonts.dart';
+import '../screens/scanned_plant_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -112,7 +113,15 @@ class HomeScreen extends StatelessWidget {
                             padding: EdgeInsets.symmetric(
                                 vertical: 25, horizontal: 38),
                           ),
-                          onPressed: () {},
+                          onPressed: () {
+                            // Navigate to ScanPlantScreen
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ScanPlantScreen(),
+                              ),
+                            );
+                          },
                           icon: Icon(Icons.add, color: Colors.white),
                           label: Text("Add a plant",
                               style:

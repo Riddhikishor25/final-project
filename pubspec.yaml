@@ -30,6 +30,7 @@ environment:
 dependencies:
   google_fonts: ^4.0.3
   http: ^1.0.0
+  image_picker: ^0.8.6
   flutter:
     sdk: flutter
 
@@ -69,6 +70,8 @@ flutter:
    - assets/images/sunflower.jpeg
    - assets/images/Weather_bg.jpg
    - assets/images/plant_screen_bg.png
+   - assets/images/app_logo.jpeg
+   - assets/images/login_pg.jpeg
    - assets/icons/
    - assets/illustrations/
 

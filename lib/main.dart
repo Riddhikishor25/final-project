@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
+import 'screens/splash_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/home_screen.dart'; // Import HomeScreen
 
 void main() {
   runApp(MyApp());
@@ -15,7 +17,11 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.green,
         fontFamily: 'Roboto',
       ),
-      home: HomeScreen(),
+      home: SplashScreen(), // Start with the SplashScreen
+      routes: {
+        '/login': (context) => LoginScreen(),
+        '/home': (context) => HomeScreen(), // Navigate to Home after login
+      },
     );
   }
 }
