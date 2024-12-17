@@ -31,7 +31,7 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.forward();
 
     // Navigate to Login Screen after animation
-    Timer(Duration(seconds: 10), () {
+    Timer(Duration(seconds: 5), () {
       Navigator.pushReplacementNamed(context, '/login');
     });
   }
@@ -45,26 +45,19 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.white, // White background for clean look
       body: FadeTransition(
         opacity: _animation,
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // GIF for splash screen
               Image.asset(
-                'assets/images/app_logo.jpeg', // Add your logo/image
-                height: 200,
+                'assets/illustrations/splash_screen_logo.gif',
+                height: 500, // Adjust size based on your image dimensions
               ),
               SizedBox(height: 20),
-              Text(
-                'Welcome to Urban Gardening',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green,
-                ),
-              ),
             ],
           ),
         ),

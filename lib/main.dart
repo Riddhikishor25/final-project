@@ -1,26 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart'; // Import ScreenUtil package
+import 'package:firebase_core/firebase_core.dart'; // Import Firebase
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/home_screen.dart'; // Import HomeScreen
+import 'screens/home_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); // Initialize Firebase
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Urban Gardening Assistant',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        fontFamily: 'Roboto',
-      ),
-      home: SplashScreen(), // Start with the SplashScreen
-      routes: {
-        '/login': (context) => LoginScreen(),
-        '/home': (context) => HomeScreen(), // Navigate to Home after login
+    return ScreenUtilInit(
+      // Proper initialization
+      designSize: Size(360, 690), // Set the design screen size
+      minTextAdapt: true, // Optional: makes text scale smoothly
+      splitScreenMode: true, // Optional: handles split-screen devices
+      builder: (context, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Urban Gardening Assistant',
+          theme: ThemeData(
+            primarySwatch: Colors.green,
+            fontFamily: 'Roboto',
+          ),
+          home: SplashScreen(),
+          routes: {
+            '/login': (context) => LoginScreen(),
+            '/home': (context) => HomeScreen(),
+          },
+        );
       },
     );
   }
