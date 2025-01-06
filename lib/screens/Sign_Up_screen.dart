@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'home_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -8,25 +10,72 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _passwordVisible = false;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Handle Firebase Sign Up
-  Future<void> _signUp() async {
+  // Google Sign-Up
+  Future<void> _signUpWithGoogle() async {
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return;
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
       );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
-      );
+
+      await _auth.signInWithCredential(credential);
+      _navigateToHome();
     } catch (e) {
-      print('Error during sign up: $e');
+      print('Error with Google Sign-Up: $e');
     }
+  }
+
+  // Facebook Sign-Up (Instagram login)
+  Future<void> _signUpWithInstagram() async {
+    try {
+      final LoginResult result = await FacebookAuth.instance.login(
+        permissions: ['email', 'public_profile'],
+      );
+
+      if (result.status == LoginStatus.success) {
+        final OAuthCredential credential =
+            FacebookAuthProvider.credential(result.accessToken!.token);
+
+        await _auth.signInWithCredential(credential);
+        _navigateToHome();
+      } else {
+        print('Instagram Sign-Up failed');
+      }
+    } catch (e) {
+      print('Error with Instagram Sign-Up: $e');
+    }
+  }
+
+  // Email and Password Sign-Up
+  Future<void> _signUpWithEmail() async {
+    try {
+      await _auth.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      _navigateToHome();
+    } catch (e) {
+      print('Error during sign-up: $e');
+    }
+  }
+
+  // Navigation to Home Screen
+  void _navigateToHome() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => HomeScreen()),
+    );
   }
 
   @override
@@ -40,36 +89,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-
-              // Top Illustration
               Center(
                 child: Image.asset(
-                  'assets/illustrations/signup_illustration.png',
-                  height: 150,
+                  'assets/illustrations/signup_logo.gif',
+                  height: 250,
                 ),
               ),
               const SizedBox(height: 30),
-
-              // Full Name
-              const Text(
-                "Full name",
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-              ),
-              TextField(
-                controller: _fullNameController,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.grey.shade200,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide.none,
-                  ),
-                  hintText: "Enter your full name",
-                ),
-              ),
-              const SizedBox(height: 15),
-
-              // Email Address
               const Text(
                 "Email address",
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
@@ -87,8 +113,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
               const SizedBox(height: 15),
-
-              // Password Field
               const Text(
                 "Password",
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
@@ -119,18 +143,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Sign Up Button
               Center(
                 child: ElevatedButton(
-                  onPressed: _signUp,
+                  onPressed: _signUpWithEmail,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber,
+                    backgroundColor: Colors.green,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 80, vertical: 15),
+                        horizontal: 70, vertical: 13),
                   ),
                   child: const Text(
                     "Sign Up",
@@ -142,25 +164,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // OR Divider
-              Center(
-                child: const Text(
-                  "Or",
+              const Center(
+                child: Text(
+                  "Or sign up with",
                   style: TextStyle(color: Colors.black45, fontSize: 16),
                 ),
               ),
               const SizedBox(height: 15),
-
-              // Social Media Login Buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Google Button
                   GestureDetector(
-                    onTap: () {
-                      print('Google Sign Up');
-                    },
+                    onTap: _signUpWithGoogle,
                     child: Image.asset(
                       'assets/icons/google_logo3.png',
                       height: 40,
@@ -168,39 +183,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                   ),
                   const SizedBox(width: 20),
-
-                  // Apple Button
                   GestureDetector(
-                    onTap: () {
-                      print('Apple Sign Up');
-                    },
+                    onTap: _signUpWithInstagram, // Instagram login
                     child: Image.asset(
-                      'assets/icons/apple_logo.png',
+                      'assets/icons/instagram_logo.png', // Instagram logo
                       height: 40,
                       width: 40,
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-
-                  // Facebook Button
-                  GestureDetector(
-                    onTap: () {
-                      print('Facebook Sign Up');
-                    },
-                    child: Opacity(
-                      opacity: 0.6,
-                      child: Image.asset(
-                        'assets/icons/facebook_logo.png',
-                        height: 40,
-                        width: 40,
-                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 30),
-
-              // Already have an account
               Center(
                 child: GestureDetector(
                   onTap: () {

@@ -29,6 +29,7 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   google_fonts: ^4.0.3
+  weather_icons: ^3.0.0
   http: ^1.0.0
   image_picker: ^0.8.6
   flutter:
@@ -41,6 +42,8 @@ dependencies:
   flutter_screenutil: ^5.9.3
   google_sign_in: ^6.1.6 # For Google Authentication
   flutter_facebook_auth: ^6.1.0 # For Facebook Authentication
+  webview_flutter: ^4.0.2
+
 
 dev_dependencies:
   flutter_test:
@@ -75,8 +78,15 @@ flutter:
    - assets/images/app_logo.jpeg
    - assets/images/login_pg.jpeg
    - assets/icons/google_logo3.png
+   - assets/icons/facebook_logo.jpeg
+   - assets/icons/instagram_logo.png
    - assets/illustrations/login_logo.gif
+   - assets/illustrations/signup_logo.gif
    - assets/illustrations/splash_screen_logo.gif
+   - assets/images/aloe_vera.jpg
+   - assets/images/snake_plant.jpg
+   - assets/images/monstera.jpg
+   - assets/images/golden_pothos.jpg
 
 
   # An image asset can refer to one or more resolution-specific "variants", see
