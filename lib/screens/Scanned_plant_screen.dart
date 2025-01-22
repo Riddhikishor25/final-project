@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'trefle_service.dart';
+import 'plant_search_screen.dart';
 
 class ScanPlantScreen extends StatefulWidget {
   @override
@@ -11,9 +11,6 @@ class ScanPlantScreen extends StatefulWidget {
 class _ScanPlantScreenState extends State<ScanPlantScreen> {
   final ImagePicker _picker = ImagePicker();
   File? _selectedImage;
-  final TextEditingController _searchController = TextEditingController();
-  List<dynamic> _searchResults = [];
-  bool _isLoading = false;
 
   // Pick image from the camera or gallery
   Future<void> pickImage(ImageSource source) async {
@@ -25,32 +22,7 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
     }
   }
 
-  // Search for plants based on the query
-  Future<void> searchPlants() async {
-    final query = _searchController.text.trim();
-    if (query.isEmpty) return;
-
-    setState(() {
-      _isLoading = true;
-      _searchResults = [];
-    });
-
-    try {
-      final results =
-          await searchPlantByCommonName(query); // Trefle API service
-      setState(() {
-        _searchResults = results;
-      });
-    } catch (e) {
-      print('Error: $e');
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  // Building a list tile for each plant in common houseplants section
+  // Helper widget to build a plant tile
   Widget _buildPlantTile({
     required String imagePath,
     required String name,
@@ -63,29 +35,21 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10.0),
-        boxShadow: [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Circular Image
               ClipOval(
-                child: Container(
-                  color: Colors.white,
-                  padding: EdgeInsets.all(2.0),
-                  child: Image.asset(
-                    imagePath,
-                    height: 62,
-                    width: 62,
-                    fit: BoxFit.cover,
-                  ),
+                child: Image.asset(
+                  imagePath,
+                  height: 62,
+                  width: 62,
+                  fit: BoxFit.cover,
                 ),
               ),
               const SizedBox(width: 15),
-              // Text and Details
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,7 +69,6 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
                         fontSize: 14,
                         color: Colors.black54,
                       ),
-                      maxLines: null,
                       overflow: TextOverflow.visible,
                     ),
                   ],
@@ -114,16 +77,14 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          // Curved Label Widgets slightly adjusted to sit below name and description
           widgetBelow,
         ],
       ),
     );
   }
 
-  // Helper widget to display icons with labels inside a curved container
-  Widget _buildCurvedWidget(IconData icon, String label,
-      {bool showLabel = true}) {
+  // Helper widget for labels
+  Widget _buildCurvedWidget(IconData icon, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -133,13 +94,11 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
       child: Row(
         children: [
           Icon(icon, color: Colors.green, size: 14),
-          if (showLabel) ...[
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
-            ),
-          ],
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, color: Colors.black54),
+          ),
         ],
       ),
     );
@@ -172,7 +131,6 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            // Subtitle
             const Text(
               "Identify plant with photo or search for common name, scientific name, or variety",
               style: TextStyle(
@@ -181,34 +139,9 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            // Search Bar + Scan Button
+            // Scan Button and Navigate to Search
             Row(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    onSubmitted: (_) => searchPlants(),
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Colors.grey.shade200,
-                      hintText: "Search plants",
-                      hintStyle: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.grey,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 18,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: () => pickImage(ImageSource.camera),
                   icon: const Icon(Icons.camera_alt, color: Colors.white),
@@ -231,27 +164,35 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => PlantSearchScreen()),
+                    );
+                  },
+                  child: const Text("Search Plant"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 24),
-            // Curved Label for Common Houseplants
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Text(
-                "Common houseplants",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.green,
-                ),
+            const Text(
+              "Common Houseplants",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
               ),
             ),
             const SizedBox(height: 16),
-            // Plant List (Static common houseplants)
             Expanded(
               child: ListView(
                 children: [
@@ -259,115 +200,78 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
                     imagePath: 'assets/images/golden_pothos.jpg',
                     name: "Golden Pothos",
                     details: "Devil's Ivy, Money Plant, Ceylon Creeper",
-                    widgetBelow: Container(
-                      margin: EdgeInsets.only(top: 4),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 10),
-                          const SizedBox(width: 80),
-                          _buildCurvedWidget(Icons.label_important, "Easy",
-                              showLabel: true),
-                          const SizedBox(width: 8),
-                          _buildCurvedWidget(Icons.water_drop, "Water",
-                              showLabel: false),
-                          const SizedBox(width: 8),
-                          _buildCurvedWidget(Icons.wb_sunny, "Light",
-                              showLabel: false),
-                        ],
-                      ),
+                    widgetBelow: Row(
+                      children: [
+                        _buildCurvedWidget(Icons.label_important, "Easy"),
+                        const SizedBox(width: 8),
+                        _buildCurvedWidget(Icons.water_drop, "Water"),
+                        const SizedBox(width: 8),
+                        _buildCurvedWidget(Icons.wb_sunny, "Light"),
+                      ],
+                    ),
+                  ),
+                  _buildPlantTile(
+                    imagePath: 'assets/images/peace_lily.jpg',
+                    name: "Peace Lily",
+                    details: "Spathiphyllum",
+                    widgetBelow: Row(
+                      children: [
+                        _buildCurvedWidget(Icons.label_important, "Moderate"),
+                        const SizedBox(width: 8),
+                        _buildCurvedWidget(Icons.water_drop, "High Water"),
+                        const SizedBox(width: 8),
+                        _buildCurvedWidget(Icons.wb_sunny, "Low Light"),
+                      ],
                     ),
                   ),
                   _buildPlantTile(
                     imagePath: 'assets/images/monstera.jpg',
                     name: "Monstera",
-                    details:
-                        "Swiss Cheese Plant, Fruit Salad Plant, Hurricane Plant",
-                    widgetBelow: Container(
-                      margin: EdgeInsets.only(top: 4),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 10),
-                          const SizedBox(width: 15),
-                          _buildCurvedWidget(Icons.label_important, "Moderate",
-                              showLabel: true),
-                          const SizedBox(width: 8),
-                          _buildCurvedWidget(Icons.water_drop, "Medium",
-                              showLabel: false),
-                          const SizedBox(width: 8),
-                          _buildCurvedWidget(Icons.wb_sunny, "Bright",
-                              showLabel: false),
-                        ],
-                      ),
+                    details: "Swiss Cheese Plant",
+                    widgetBelow: Row(
+                      children: [
+                        _buildCurvedWidget(Icons.label_important, "Easy"),
+                        const SizedBox(width: 8),
+                        _buildCurvedWidget(Icons.water_drop, "Medium Water"),
+                        const SizedBox(width: 8),
+                        _buildCurvedWidget(
+                            Icons.wb_sunny, "Bright Indirect Light"),
+                      ],
                     ),
                   ),
                   _buildPlantTile(
                     imagePath: 'assets/images/snake_plant.jpg',
                     name: "Snake Plant",
-                    details:
-                        "Mother-in-law's Tongue, Bowstring Hemp, Rufus Plant",
-                    widgetBelow: Container(
-                      margin: EdgeInsets.only(top: 4),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const SizedBox(width: 80),
-                          _buildCurvedWidget(Icons.label_important, "Low",
-                              showLabel: true),
-                          const SizedBox(width: 8),
-                          _buildCurvedWidget(Icons.water_drop, "Dry",
-                              showLabel: false),
-                          const SizedBox(width: 8),
-                          _buildCurvedWidget(Icons.wb_sunny, "Indirect",
-                              showLabel: false),
-                        ],
-                      ),
+                    details: "Sansevieria, Mother-in-Law's Tongue",
+                    widgetBelow: Row(
+                      children: [
+                        _buildCurvedWidget(Icons.label_important, "Easy"),
+                        const SizedBox(width: 8),
+                        _buildCurvedWidget(Icons.water_drop, "Low Water"),
+                        const SizedBox(width: 8),
+                        _buildCurvedWidget(
+                            Icons.wb_sunny, "Low to Bright Light"),
+                      ],
                     ),
                   ),
                   _buildPlantTile(
                     imagePath: 'assets/images/aloe_vera.jpg',
                     name: "Aloe Vera",
-                    details: "Medicinal Aloe, Barbados Aloe, Bitter Aloe",
-                    widgetBelow: Container(
-                      margin: EdgeInsets.only(top: 5),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const SizedBox(width: 80),
-                          _buildCurvedWidget(Icons.label_important, "Easy",
-                              showLabel: true),
-                          const SizedBox(width: 8),
-                          _buildCurvedWidget(Icons.water_drop, "Dry",
-                              showLabel: false),
-                          const SizedBox(width: 8),
-                          _buildCurvedWidget(Icons.wb_sunny, "Bright",
-                              showLabel: false),
-                        ],
-                      ),
+                    details: "Aloe barbadensis miller",
+                    widgetBelow: Row(
+                      children: [
+                        _buildCurvedWidget(Icons.label_important, "Easy"),
+                        const SizedBox(width: 8),
+                        _buildCurvedWidget(Icons.water_drop, "Low Water"),
+                        const SizedBox(width: 8),
+                        _buildCurvedWidget(
+                            Icons.wb_sunny, "Bright Indirect Light"),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            // Search Results
-            _isLoading
-                ? Center(child: CircularProgressIndicator())
-                : _searchResults.isNotEmpty
-                    ? Expanded(
-                        child: ListView.builder(
-                          itemCount: _searchResults.length,
-                          itemBuilder: (context, index) {
-                            final plant = _searchResults[index];
-                            return ListTile(
-                              title: Text(plant['common_name'] ?? 'Unknown'),
-                              subtitle: Text(plant['scientific_name'] ?? ''),
-                            );
-                          },
-                        ),
-                      )
-                    : Container(),
           ],
         ),
       ),

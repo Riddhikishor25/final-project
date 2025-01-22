@@ -87,6 +87,7 @@ flutter:
    - assets/images/snake_plant.jpg
    - assets/images/monstera.jpg
    - assets/images/golden_pothos.jpg
+   - assets/images/peace_lily.jpg
 
 
   # An image asset can refer to one or more resolution-specific "variants", see
