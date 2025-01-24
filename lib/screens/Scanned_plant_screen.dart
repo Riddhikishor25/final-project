@@ -30,8 +30,7 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
     required Widget widgetBelow,
   }) {
     return Container(
-      margin: EdgeInsets.zero,
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.all(13.0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10.0),
@@ -44,8 +43,8 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
               ClipOval(
                 child: Image.asset(
                   imagePath,
-                  height: 62,
-                  width: 62,
+                  height: 75,
+                  width: 75,
                   fit: BoxFit.cover,
                 ),
               ),
@@ -83,8 +82,9 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
     );
   }
 
-  // Helper widget for labels
-  Widget _buildCurvedWidget(IconData icon, String label) {
+  // Helper widget to display icons with labels inside a curved container
+  Widget _buildCurvedWidget(IconData icon, String label,
+      {bool showLabel = true}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -94,11 +94,13 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
       child: Row(
         children: [
           Icon(icon, color: Colors.green, size: 14),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12, color: Colors.black54),
-          ),
+          if (showLabel) ...[
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+          ],
         ],
       ),
     );
@@ -112,7 +114,7 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.close, color: Colors.black),
+          icon: const Icon(Icons.close, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -132,16 +134,50 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              "Identify plant with photo or search for common name, scientific name, or variety",
+              "Identify plant with photo or search for common name, scientific name, or variety.",
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.black54,
               ),
             ),
             const SizedBox(height: 24),
-            // Scan Button and Navigate to Search
+
+            // Search Bar and Scan Plant Button Side by Side
             Row(
               children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => PlantSearchScreen()),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(25.0),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.search, color: Colors.black54),
+                          const SizedBox(width: 8),
+                          Text(
+                            "Search for a plant...",
+                            style: TextStyle(
+                              color: Colors.black54,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: () => pickImage(ImageSource.camera),
                   icon: const Icon(Icons.camera_alt, color: Colors.white),
@@ -160,39 +196,33 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
                     ),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
-                      vertical: 15,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => PlantSearchScreen()),
-                    );
-                  },
-                  child: const Text("Search Plant"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
+                      vertical: 14,
                     ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 24),
-            const Text(
-              "Common Houseplants",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
+
+            // Curved Label for Common Houseplants
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Text(
+                "Common houseplants",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.green,
+                ),
               ),
             ),
             const SizedBox(height: 16),
+
+            // Plant List
             Expanded(
               child: ListView(
                 children: [
@@ -202,11 +232,14 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
                     details: "Devil's Ivy, Money Plant, Ceylon Creeper",
                     widgetBelow: Row(
                       children: [
+                        const SizedBox(width: 80),
                         _buildCurvedWidget(Icons.label_important, "Easy"),
                         const SizedBox(width: 8),
-                        _buildCurvedWidget(Icons.water_drop, "Water"),
+                        _buildCurvedWidget(Icons.water_drop, "Bright",
+                            showLabel: false),
                         const SizedBox(width: 8),
-                        _buildCurvedWidget(Icons.wb_sunny, "Light"),
+                        _buildCurvedWidget(Icons.wb_sunny, "Light",
+                            showLabel: false),
                       ],
                     ),
                   ),
@@ -216,11 +249,14 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
                     details: "Spathiphyllum",
                     widgetBelow: Row(
                       children: [
+                        const SizedBox(width: 80),
                         _buildCurvedWidget(Icons.label_important, "Moderate"),
                         const SizedBox(width: 8),
-                        _buildCurvedWidget(Icons.water_drop, "High Water"),
+                        _buildCurvedWidget(Icons.water_drop, "High Water",
+                            showLabel: false),
                         const SizedBox(width: 8),
-                        _buildCurvedWidget(Icons.wb_sunny, "Low Light"),
+                        _buildCurvedWidget(Icons.wb_sunny, "Low Light",
+                            showLabel: false),
                       ],
                     ),
                   ),
@@ -230,12 +266,15 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
                     details: "Swiss Cheese Plant",
                     widgetBelow: Row(
                       children: [
+                        const SizedBox(width: 80),
                         _buildCurvedWidget(Icons.label_important, "Easy"),
                         const SizedBox(width: 8),
-                        _buildCurvedWidget(Icons.water_drop, "Medium Water"),
+                        _buildCurvedWidget(Icons.water_drop, "Medium Water",
+                            showLabel: false),
                         const SizedBox(width: 8),
                         _buildCurvedWidget(
-                            Icons.wb_sunny, "Bright Indirect Light"),
+                            Icons.wb_sunny, "Bright Indirect Light",
+                            showLabel: false),
                       ],
                     ),
                   ),
@@ -245,12 +284,15 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
                     details: "Sansevieria, Mother-in-Law's Tongue",
                     widgetBelow: Row(
                       children: [
+                        const SizedBox(width: 80),
                         _buildCurvedWidget(Icons.label_important, "Easy"),
                         const SizedBox(width: 8),
-                        _buildCurvedWidget(Icons.water_drop, "Low Water"),
+                        _buildCurvedWidget(Icons.water_drop, "Low Water",
+                            showLabel: false),
                         const SizedBox(width: 8),
                         _buildCurvedWidget(
-                            Icons.wb_sunny, "Low to Bright Light"),
+                            Icons.wb_sunny, "Low to Bright Light",
+                            showLabel: false),
                       ],
                     ),
                   ),
@@ -260,12 +302,15 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
                     details: "Aloe barbadensis miller",
                     widgetBelow: Row(
                       children: [
+                        const SizedBox(width: 80),
                         _buildCurvedWidget(Icons.label_important, "Easy"),
                         const SizedBox(width: 8),
-                        _buildCurvedWidget(Icons.water_drop, "Low Water"),
+                        _buildCurvedWidget(Icons.water_drop, "Low Water",
+                            showLabel: false),
                         const SizedBox(width: 8),
                         _buildCurvedWidget(
-                            Icons.wb_sunny, "Bright Indirect Light"),
+                            Icons.wb_sunny, "Bright Indirect Light",
+                            showLabel: false),
                       ],
                     ),
                   ),
