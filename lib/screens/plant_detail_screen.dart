@@ -1,182 +1,112 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-class PlantDetailScreen extends StatelessWidget {
+class PlantDetailsScreen extends StatelessWidget {
   final String plantName;
-  final String plantAge;
-  final int health;
-  final String plantImage;
+  final String imageUrl;
+  final String plantDescription;
 
-  const PlantDetailScreen({
+  PlantDetailsScreen({
     required this.plantName,
-    required this.plantAge,
-    required this.health,
-    required this.plantImage,
+    required this.imageUrl,
+    required this.plantDescription,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      extendBodyBehindAppBar: true,
-      body: Stack(
-        children: [
-          // Background Image
-          Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/images/plant_screen_bg.png'),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-
-          // "Detail Plant" Text on the Background
-          Positioned(
-            top: 112,
-            left: 27,
-            child: Text(
-              "Detail Plant",
-              style: GoogleFonts.lato(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.green[900],
-              ),
-            ),
-          ),
-
-          // Water and Fertilizer Status Cards on Background
-          Positioned(
-            top: MediaQuery.of(context).size.height * 0.2,
-            left: 30,
-            right: 30,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
               children: [
-                _StatusCard(
-                  title: "Water",
-                  status: "Bad",
-                  percentage: "20%",
-                  color: Colors.redAccent,
-                ),
-                _StatusCard(
-                  title: "Fertilizer",
-                  status: "Good",
-                  percentage: "20%",
-                  color: Colors.green,
-                ),
-              ],
-            ),
-          ),
-
-          // Daily Task Section on Background
-          Positioned(
-            bottom: 92,
-            left: 16,
-            right: 16,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Daily Task",
-                  style: GoogleFonts.lato(
-                    fontSize: 25,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white70,
+                ClipRRect(
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: 300,
                   ),
                 ),
-                SizedBox(height: 10),
-                Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade100
-                        .withOpacity(0.7), // Background with slight opacity
-                    borderRadius: BorderRadius.circular(15),
+                Positioned(
+                  top: 40,
+                  left: 10,
+                  child: IconButton(
+                    icon: Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
+                ),
+                Positioned(
+                  top: 40,
+                  right: 10,
+                  child: IconButton(
+                    icon: Icon(Icons.share, color: Colors.white),
+                    onPressed: () {},
+                  ),
+                ),
+                Positioned(
+                  bottom: 10,
+                  left: 16,
                   child: Row(
                     children: [
-                      Icon(Icons.water_drop, color: Colors.blue),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          "Water the plant",
-                          style: GoogleFonts.lato(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      Icon(Icons.check_circle, color: Colors.green),
+                      _buildTag("0 sites available", Colors.amber),
+                      SizedBox(width: 8),
+                      _buildTag("Not recommended", Colors.redAccent),
                     ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    plantName,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green[800],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    plantDescription,
+                    style: TextStyle(fontSize: 16, color: Colors.black87),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
-}
 
-// Reusable Status Card Widget
-class _StatusCard extends StatelessWidget {
-  final String title;
-  final String status;
-  final String percentage;
-  final Color color;
-
-  const _StatusCard({
-    required this.title,
-    required this.status,
-    required this.percentage,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildTag(String text, Color color) {
     return Container(
-      width: MediaQuery.of(context).size.width * 0.4, // Adjust width
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(15),
+        color: color,
+        borderRadius: BorderRadius.circular(20),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            status,
-            style: TextStyle(
-              fontSize: 16,
-              color: color,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            percentage,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.black87,
-            ),
-          ),
-        ],
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

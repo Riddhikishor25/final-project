@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/plant_card.dart';
+
 import '../widgets/weather_card.dart'; // Importing WeatherCard widget
 import 'package:google_fonts/google_fonts.dart';
 import '../screens/scanned_plant_screen.dart'; // Importing ScanPlantScreen

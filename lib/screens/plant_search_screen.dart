@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
+import 'plant_detail_screen.dart';
 
 class PlantSearchScreen extends StatefulWidget {
   @override
@@ -29,7 +30,7 @@ class _PlantSearchScreenState extends State<PlantSearchScreen> {
 
   // Function to fetch plant details, including image, from the Plant.id API
   Future<Map<String, dynamic>> fetchPlantDetails(String accessToken) async {
-    final String apiKey = '8Hlh2zEWKWYzGWR6nwV2KXvLvMMIBFDHOHlAJasUN5cNLjdSsu';
+    final String apiKey = 'xYCg3x9IjpHzPUlJxHTD5nwAk7xBNc1PKw7jYVp6g3d08ZyBZm';
     final String detailsEndpoint =
         'https://plant.id/api/v3/kb/plants/$accessToken?details=common_names%2Curl%2Cdescription%2Ctaxonomy%2Crank%2Cgbif_id%2Cinaturalist_id%2Cimage%2Csynonyms%2Cedible_parts%2Cwatering%2Cpropagation_methods&language=en';
 
@@ -95,7 +96,7 @@ class _PlantSearchScreenState extends State<PlantSearchScreen> {
     });
 
     final String apiUrl = 'https://plant.id/api/v3/kb/plants/name_search?q=';
-    final String apiKey = '8Hlh2zEWKWYzGWR6nwV2KXvLvMMIBFDHOHlAJasUN5cNLjdSsu';
+    final String apiKey = 'xYCg3x9IjpHzPUlJxHTD5nwAk7xBNc1PKw7jYVp6g3d08ZyBZm';
 
     try {
       final response = await http.get(
@@ -224,33 +225,57 @@ class _PlantSearchScreenState extends State<PlantSearchScreen> {
                                 final plantDetails = snapshot.data ?? {};
                                 final imageUrl =
                                     plantDetails['image']?['value'] ?? '';
+                                final plantDescription =
+                                    plantDetails['description']?['value'] ??
+                                        'No description available';
 
                                 return ListTile(
-                                  leading: ClipOval(
-                                    child: imageUrl.isNotEmpty
-                                        ? Image.network(
-                                            imageUrl,
-                                            height: 55,
-                                            width: 55,
-                                            fit: BoxFit.cover,
-                                          )
-                                        : Icon(
+                                  leading: Container(
+                                    width: 100, // Ensures a larger size
+                                    height: 100, // Ensures a larger size
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      image: imageUrl.isNotEmpty
+                                          ? DecorationImage(
+                                              image: NetworkImage(imageUrl),
+                                              fit: BoxFit.cover,
+                                            )
+                                          : null,
+                                    ),
+                                    child: imageUrl.isEmpty
+                                        ? Icon(
                                             Icons.local_florist,
-                                            size: 50,
+                                            size: 60,
                                             color: Colors.green,
-                                          ),
+                                          ) // Larger icon if no image
+                                        : null,
                                   ),
                                   title: Text(
                                     plantName,
                                     style: TextStyle(
+                                      fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.black,
+                                      color: Colors.green[800],
                                     ),
                                   ),
                                   subtitle: Text(
                                     plant['matched_in_type'] ?? 'Unknown Type',
                                     style: TextStyle(color: Colors.black54),
                                   ),
+                                  onTap: () {
+                                    // Navigate to PlantDetailsScreen with plant data
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            PlantDetailsScreen(
+                                          plantName: plantName,
+                                          imageUrl: imageUrl,
+                                          plantDescription: plantDescription,
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 );
                               },
                             );
