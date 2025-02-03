@@ -32,7 +32,7 @@ class _PlantSearchScreenState extends State<PlantSearchScreen> {
   Future<Map<String, dynamic>> fetchPlantDetails(String accessToken) async {
     final String apiKey = 'xYCg3x9IjpHzPUlJxHTD5nwAk7xBNc1PKw7jYVp6g3d08ZyBZm';
     final String detailsEndpoint =
-        'https://plant.id/api/v3/kb/plants/$accessToken?details=common_names%2Curl%2Cdescription%2Ctaxonomy%2Crank%2Cgbif_id%2Cinaturalist_id%2Cimage%2Csynonyms%2Cedible_parts%2Cwatering%2Cpropagation_methods&language=en';
+        'https://plant.id/api/v3/kb/plants/$accessToken?details=common_names%2Curl%2Cdescription%2Crank%2Cgbif_id%2Cinaturalist_id%2Cimage%2Csynonyms%2Cedible_parts%2Cwatering%2Cpropagation_methods&language=en';
 
     int retryCount = 0;
     const maxRetries = 5;
@@ -229,6 +229,16 @@ class _PlantSearchScreenState extends State<PlantSearchScreen> {
                                     plantDetails['description']?['value'] ??
                                         'No description available';
 
+                                // Convert lists to List<String>
+                                final commonNames = List<String>.from(
+                                    plantDetails['common_names'] ?? []);
+                                final edibleParts = List<String>.from(
+                                    plantDetails['edible_parts'] ?? []);
+                                final propagationMethods = List<String>.from(
+                                    plantDetails['propagation_methods'] ?? []);
+                                final watering = plantDetails['watering'] ?? 1;
+                                final wikiUrl = plantDetails['url'] ?? '';
+
                                 return ListTile(
                                   leading: Container(
                                     width: 100, // Ensures a larger size
@@ -263,7 +273,7 @@ class _PlantSearchScreenState extends State<PlantSearchScreen> {
                                     style: TextStyle(color: Colors.black54),
                                   ),
                                   onTap: () {
-                                    // Navigate to PlantDetailsScreen with plant data
+                                    // Navigate to PlantDetailsScreen with all plant data (excluding taxonomy)
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
@@ -272,6 +282,14 @@ class _PlantSearchScreenState extends State<PlantSearchScreen> {
                                           plantName: plantName,
                                           imageUrl: imageUrl,
                                           plantDescription: plantDescription,
+                                          commonNames:
+                                              commonNames, // Casted to List<String>
+                                          edibleParts:
+                                              edibleParts, // Casted to List<String>
+                                          propagationMethods:
+                                              propagationMethods, // Casted to List<String>
+                                          watering: watering,
+                                          wikiUrl: wikiUrl,
                                         ),
                                       ),
                                     );
