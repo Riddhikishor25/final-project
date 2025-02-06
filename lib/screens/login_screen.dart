@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'Authentication_database.dart'; // Import ApiService for authentication
 import 'home_screen.dart'; // Navigate to HomeScreen after login
 import 'recover_password_screen.dart'; // Navigate to RecoverPasswordScreen
 import 'Sign_Up_screen.dart'; // Import SignUpScreen
@@ -11,35 +10,80 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  bool isLoading = false;
 
-  // Google Sign-In
-  Future<void> _googleLogin() async {
+  // Instance of ApiService
+  final ApiService apiService = ApiService();
+
+  // Login using ApiService
+  Future<void> _loginWithApiService() async {
+    setState(() {
+      isLoading = true;
+    });
+
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        return; // User canceled the login
-      }
-
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+      final result = await apiService.login(
+        emailController.text,
+        passwordController.text,
       );
 
-      final UserCredential userCredential =
-          await _auth.signInWithCredential(credential);
-      if (userCredential.user != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
-        );
-      }
+      setState(() {
+        isLoading = false;
+      });
+
+      // Assuming the API returns a name and token on successful login
+      String username = result['username']; // Example: retrieve name
+      String token = result['token']; // Example: retrieve token
+
+      // Optionally, you can store the token using a secure storage mechanism
+
+      // Navigate to HomeScreen after successful login
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
     } catch (e) {
-      print('Error during Google login: $e');
+      setState(() {
+        isLoading = false;
+      });
+
+      // Log the error
+      print('Error during login: $e');
+
+      // Handle error message based on the error type
+      String errorMessage = 'Failed to login. Please check your credentials.';
+      if (e is Exception) {
+        errorMessage = 'Error: ${e.toString()}';
+      }
+
+      // Show error dialog if login fails
+      _showErrorDialog(errorMessage);
     }
+  }
+
+  // Show error dialog
+  void _showErrorDialog(String message) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Login Error"),
+            content: Text(message),
+            actions: [
+              TextButton(
+                child: Text("OK"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    });
   }
 
   @override
@@ -70,8 +114,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 20),
 
-                // Username Input Field
+                // Email Input Field (updated hint text)
                 TextField(
+                  controller: emailController,
                   style: const TextStyle(
                     color: Colors.black,
                     fontSize: 16,
@@ -80,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.grey.shade200,
-                    hintText: "Username",
+                    hintText: "Enter Email", // Updated hint text
                     hintStyle: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w400,
@@ -100,6 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Password Input Field
                 TextField(
+                  controller: passwordController,
                   obscureText: true,
                   style: const TextStyle(
                     color: Colors.black,
@@ -126,6 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 10), // Add extra spacing
+
                 // Forgot Password
                 Align(
                   alignment: Alignment.centerRight,
@@ -152,12 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Continue Button
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => HomeScreen()),
-                    );
-                  },
+                  onPressed: isLoading ? null : _loginWithApiService,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     shape: RoundedRectangleBorder(
@@ -168,14 +210,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       horizontal: 120,
                     ),
                   ),
-                  child: const Text(
-                    "Continue",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: isLoading
+                      ? CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          "Continue",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 10),
 
@@ -192,7 +236,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Google Login Button
                 ElevatedButton.icon(
-                  onPressed: _googleLogin,
+                  onPressed: () {
+                    // _googleLogin(); (Google login method here)
+                  },
                   icon: Image.asset(
                     'assets/icons/google_logo3.png',
                     height: 24,

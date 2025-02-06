@@ -30,7 +30,7 @@ class _PlantSearchScreenState extends State<PlantSearchScreen> {
 
   // Function to fetch plant details, including image, from the Plant.id API
   Future<Map<String, dynamic>> fetchPlantDetails(String accessToken) async {
-    final String apiKey = 'xYCg3x9IjpHzPUlJxHTD5nwAk7xBNc1PKw7jYVp6g3d08ZyBZm';
+    final String apiKey = 'jI5fQTt86KSIoBPUXKgjasso1vnt5KLlqJbNqSFARYacXOJPKG';
     final String detailsEndpoint =
         'https://plant.id/api/v3/kb/plants/$accessToken?details=common_names%2Curl%2Cdescription%2Crank%2Cgbif_id%2Cinaturalist_id%2Cimage%2Csynonyms%2Cedible_parts%2Cwatering%2Cpropagation_methods&language=en';
 
@@ -96,7 +96,7 @@ class _PlantSearchScreenState extends State<PlantSearchScreen> {
     });
 
     final String apiUrl = 'https://plant.id/api/v3/kb/plants/name_search?q=';
-    final String apiKey = 'xYCg3x9IjpHzPUlJxHTD5nwAk7xBNc1PKw7jYVp6g3d08ZyBZm';
+    final String apiKey = 'jI5fQTt86KSIoBPUXKgjasso1vnt5KLlqJbNqSFARYacXOJPKG';
 
     try {
       final response = await http.get(
@@ -236,7 +236,8 @@ class _PlantSearchScreenState extends State<PlantSearchScreen> {
                                     plantDetails['edible_parts'] ?? []);
                                 final propagationMethods = List<String>.from(
                                     plantDetails['propagation_methods'] ?? []);
-                                final watering = plantDetails['watering'] ?? 1;
+                                final watering = plantDetails['watering'] ??
+                                    {"min": 0, "max": 0};
                                 final wikiUrl = plantDetails['url'] ?? '';
 
                                 return ListTile(
@@ -282,12 +283,20 @@ class _PlantSearchScreenState extends State<PlantSearchScreen> {
                                           plantName: plantName,
                                           imageUrl: imageUrl,
                                           plantDescription: plantDescription,
-                                          commonNames:
-                                              commonNames, // Casted to List<String>
-                                          edibleParts:
-                                              edibleParts, // Casted to List<String>
-                                          propagationMethods:
-                                              propagationMethods, // Casted to List<String>
+                                          commonNames: commonNames is List
+                                              ? List<String>.from(commonNames
+                                                  .map((e) => e.toString()))
+                                              : [], // Casted to List<String>
+                                          edibleParts: edibleParts is List
+                                              ? List<String>.from(edibleParts
+                                                  .map((e) => e.toString()))
+                                              : [],
+                                          propagationMethods: propagationMethods
+                                                  is List
+                                              ? List<String>.from(
+                                                  propagationMethods
+                                                      .map((e) => e.toString()))
+                                              : [], // Casted to List<String>
                                           watering: watering,
                                           wikiUrl: wikiUrl,
                                         ),
