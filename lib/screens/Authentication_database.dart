@@ -1,92 +1,104 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // For secure token storage
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Secure token storage
 
 class ApiService {
   static const String baseUrl =
-      'http://192.168.1.9:5000'; // Replace with your Flask app's URL if deployed
+      'http://192.168.1.6:5000'; // Update for live server
   final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
-  // Method for user signup (updated according to changes in Flask)
+  // User Signup
   Future<Map<String, dynamic>> signup(
       String username, String email, String password) async {
     final url = Uri.parse('$baseUrl/signup');
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'username': username, // Updated field
-        'email': email,
-        'password': password,
-      }),
-    );
 
-    if (response.statusCode == 201) {
-      // Success: Decode response if the backend returns token and status
-      return json.decode(response.body);
-    } else {
-      // Handle different error statuses
-      throw Exception('Failed to register user: ${response.body}');
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'username': username,
+          'email': email,
+          'password': password,
+        }),
+      );
+
+      print("Signup Response: ${response.body}");
+
+      final responseData = json.decode(response.body);
+      return response.statusCode == 201 && responseData["success"] == true
+          ? responseData
+          : {
+              "success": false,
+              "message": responseData["message"] ?? "Signup failed."
+            };
+    } catch (e) {
+      print("Signup Exception: $e");
+      return {"success": false, "message": "Network error. Please try again."};
     }
   }
 
-  // Method for user login
-  Future<Map<String, dynamic>> login(String email, String password) async {
-    final url = Uri.parse('$baseUrl/login');
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'email': email,
-        'password': password,
-      }),
-    );
+  Future<Map<String, dynamic>?> login(String email, String password) async {
+    try {
+      print("API request started...");
+      final response = await http.post(
+        Uri.parse('$baseUrl/login'),
+        body: jsonEncode({"email": email, "password": password}),
+        headers: {"Content-Type": "application/json"},
+      );
+      print("API request completed. Response received!");
 
-    if (response.statusCode == 200) {
-      // Decode the response body
-      Map<String, dynamic> data = json.decode(response.body);
-      await _secureStorage.write(
-          key: 'token', value: data['token']); // Store the token securely
-
-      // You can also access the username if needed
-      String username = data['username'];
-      print("Logged in as $username");
-
-      return {
-        'token': data['token'], // Return token
-        'username': username, // Return username if you need it
-      };
-    } else {
-      // Handle login error
-      throw Exception('Failed to login: ${response.body}');
+      if (response.statusCode == 200) {
+        print("API Response Body: ${response.body}");
+        return jsonDecode(response.body);
+      } else {
+        print("API Error - Status Code: ${response.statusCode}");
+        print("API Error - Body: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      print("Exception in API call: $e");
+      return null;
     }
   }
 
-  // Method for accessing the dashboard (JWT required)
+  // Fetch Dashboard Data (Requires JWT)
   Future<Map<String, dynamic>> getDashboard() async {
-    final token = await _secureStorage.read(key: 'token'); // Read stored token
-    if (token == null) {
-      throw Exception('No token found');
-    }
+    try {
+      final token = await _secureStorage.read(key: 'token');
+      if (token == null) {
+        return {"success": false, "message": "No token found. Please log in."};
+      }
 
-    final url = Uri.parse('$baseUrl/dashboard');
-    final response = await http.get(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token', // Include JWT token in header
-      },
-    );
+      final url = Uri.parse('$baseUrl/dashboard');
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
-    if (response.statusCode == 200) {
-      return json.decode(response.body); // Success
-    } else {
-      throw Exception('Failed to fetch dashboard: ${response.body}');
+      print("Dashboard Response: ${response.body}");
+      return response.statusCode == 200
+          ? json.decode(response.body)
+          : {
+              "success": false,
+              "message": "Failed to fetch dashboard. Please try again."
+            };
+    } catch (e) {
+      print("Dashboard Fetch Error: $e");
+      return {"success": false, "message": "Network error."};
     }
   }
 
-  // Method to logout (delete token)
+  // Logout (Clears Token)
   Future<void> logout() async {
-    await _secureStorage.delete(key: 'token'); // Delete the stored token
+    try {
+      await _secureStorage.delete(key: 'token');
+      print("Token deleted successfully!");
+    } catch (e) {
+      print("Logout Exception: $e");
+    }
   }
 }

@@ -1,12 +1,11 @@
-import 'package:flutter/material.dart';
-
-import '../widgets/weather_card.dart'; // Importing WeatherCard widget
-import 'package:google_fonts/google_fonts.dart';
-import '../screens/scanned_plant_screen.dart'; // Importing ScanPlantScreen
-import 'dart:async';
 import 'dart:convert';
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'package:weather_icons/weather_icons.dart'; // Import the weather_icons package
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'Scanned_plant_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -14,99 +13,131 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String city = "Mumbai"; // Default city
+  String city = "Fetching...";
   String temperature = "Loading...";
-  String weatherCondition = "";
-  String greeting = "Good afternoon"; // Default greeting
+  String greeting = "Good afternoon";
+  List<String> funFacts = ["Loading fun facts..."];
+
+  Timer? _funFactTimer;
+  final PageController _funFactController =
+      PageController(viewportFraction: 0.85, initialPage: 1000);
 
   @override
   void initState() {
     super.initState();
-    fetchWeather(city);
-    setGreeting(); // Call method to update greeting based on time
+    getCurrentLocation();
+    fetchFunFacts();
+    setGreeting();
+  }
+
+  @override
+  void dispose() {
+    _funFactTimer?.cancel();
+    _funFactController.dispose();
+    super.dispose();
   }
 
   void setGreeting() {
     final currentHour = DateTime.now().hour;
-
     if (currentHour < 12) {
       greeting = "Good morning!";
     } else if (currentHour < 18) {
       greeting = "Good afternoon!";
     } else {
-      greeting = "Good evening!";
+      greeting = "Good night!";
     }
   }
 
-  Future<void> fetchWeather(String city) async {
+  Future<void> getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      setState(() => city = "Enable GPS");
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.deniedForever) {
+        setState(() => city = "Location Denied");
+        return;
+      }
+    }
+
+    Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+
+    getCityName(position.latitude, position.longitude);
+    fetchWeather(position.latitude, position.longitude);
+  }
+
+  Future<void> getCityName(double latitude, double longitude) async {
+    try {
+      List<Placemark> placemarks =
+          await placemarkFromCoordinates(latitude, longitude);
+      if (placemarks.isNotEmpty) {
+        setState(() => city = placemarks[0].locality ?? "Unknown");
+      }
+    } catch (e) {
+      setState(() => city = "Error");
+    }
+  }
+
+  Future<void> fetchWeather(double latitude, double longitude) async {
     final String apiKey = '9c70a4631add50cb22594b3934b54109';
     final String baseUrl = 'https://api.openweathermap.org/data/2.5/weather';
 
     try {
-      final url = Uri.parse('$baseUrl?q=$city&appid=$apiKey&units=metric');
+      final url = Uri.parse(
+          '$baseUrl?lat=$latitude&lon=$longitude&appid=$apiKey&units=metric');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        setState(() {
-          temperature = "${data['main']['temp']}°C";
-          weatherCondition = data['weather'][0]['description'];
-        });
+        setState(() => temperature = "${data['main']['temp']}°C");
       } else {
-        setState(() {
-          temperature = "Error fetching weather";
-        });
+        setState(() => temperature = "Error fetching weather");
       }
     } catch (e) {
-      setState(() {
-        temperature = "Failed to load weather";
-      });
+      setState(() => temperature = "Failed to load weather");
     }
   }
 
-  // Custom method to map weather condition to a specific icon
-  Icon getWeatherIcon(String condition) {
-    switch (condition) {
-      case 'clear sky':
-        return Icon(WeatherIcons.day_sunny); // Clear sky icon
-      case 'few clouds':
-      case 'scattered clouds':
-      case 'broken clouds':
-      case 'overcast clouds':
-        return Icon(WeatherIcons.day_cloudy); // Cloudy icon
-      case 'light rain':
-      case 'moderate rain':
-      case 'heavy intensity rain':
-      case 'very heavy rain':
-      case 'extreme rain':
-      case 'freezing rain':
-        return Icon(WeatherIcons.day_rain); // Rain icon
-      case 'thunderstorm with light rain':
-      case 'thunderstorm with heavy rain':
-      case 'thunderstorm with hail':
-        return Icon(WeatherIcons.day_thunderstorm); // Thunderstorm icon
-      case 'light snow':
-      case 'snow':
-      case 'heavy snow':
-        return Icon(WeatherIcons.day_snow); // Snow icon
-      case 'sleet':
-        return Icon(WeatherIcons.day_sleet); // Sleet icon
-      case 'light intensity drizzle':
-      case 'drizzle':
-      case 'heavy intensity drizzle':
-        return Icon(WeatherIcons.day_sprinkle); // Drizzle icon
-      case 'mist':
-      case 'smoke':
-      case 'haze':
-      case 'fog':
-        return Icon(WeatherIcons.day_fog); // Mist, smoke, haze, or fog icon
-      case 'sand':
-      case 'dust':
-      case 'ash':
-        return Icon(WeatherIcons.day_windy); // Windy (sand, dust, or ash) icon
-      default:
-        return Icon(WeatherIcons.na); // Default icon if condition doesn't match
+  Future<void> fetchFunFacts() async {
+    final String funFactApiUrl = 'http://192.168.1.6:5000/get_fun_fact';
+
+    try {
+      final response = await http.get(Uri.parse(funFactApiUrl));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+
+        setState(() {
+          funFacts = data.map((fact) => fact['fact'].toString()).toList();
+        });
+
+        _startFunFactTimer();
+      } else {
+        setState(() => funFacts = ["Error: Failed to load fun facts."]);
+      }
+    } catch (e) {
+      setState(() => funFacts = ["Error fetching fun facts: $e"]);
     }
+  }
+
+  void _startFunFactTimer() {
+    _funFactTimer?.cancel();
+    _funFactTimer = Timer.periodic(Duration(seconds: 5), (timer) {
+      if (_funFactController.hasClients) {
+        _funFactController.nextPage(
+          duration: Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   @override
@@ -116,7 +147,6 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Icon(Icons.menu, color: Colors.green[900]),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -124,112 +154,119 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              greeting, // Display dynamic greeting
-              style: GoogleFonts.roboto(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.green[900],
-              ),
-            ),
-            Text(
-              "Your plants are so glad you are here. It's Plant care time!",
-              style: GoogleFonts.roboto(
-                fontSize: 18,
-                color: Colors.green[700],
-              ),
-            ),
-            SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Weather Card
-                Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
-                        blurRadius: 10,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        getWeatherIcon(weatherCondition.toLowerCase())
-                            .icon, // Updated weather icon
-                        color: Colors.green[700],
-                        size: 25,
-                      ),
-                      SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "$city",
-                            style: GoogleFonts.roboto(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green[900],
-                            ),
-                          ),
-                          Text(
-                            "$temperature",
-                            style: GoogleFonts.roboto(
-                              fontSize: 16,
-                              color: Colors.green[700],
-                            ),
-                          ),
-                          Text(
-                            "$weatherCondition",
-                            style: GoogleFonts.roboto(
-                              fontSize: 14,
-                              color: Colors.green[700],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+      body: SingleChildScrollView(
+        physics: BouncingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                greeting,
+                style: GoogleFonts.roboto(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green[900],
                 ),
-              ],
-            ),
-            SizedBox(height: 20),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  // Navigate to the ScanPlantScreen
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ScanPlantScreen()),
-                  );
-                },
+              ),
+              Text(
+                "Your plants are so glad you are here. It's Plant care time!",
+                style: GoogleFonts.roboto(
+                  fontSize: 16,
+                  color: Colors.green[800],
+                ),
+              ),
+              SizedBox(height: 20),
+              // Weather Widget
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Color(0xFFDCE4C7),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.cloud, color: Colors.green[900]),
+                    SizedBox(width: 10),
+                    Text(
+                      "$city  $temperature",
+                      style: GoogleFonts.roboto(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green[900],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 10),
+              // Fun Facts Carousel (WITH "Did You Know?")
+              SizedBox(
+                height: 140,
+                child: PageView.builder(
+                  controller: _funFactController,
+                  itemBuilder: (context, index) {
+                    final actualIndex = index % funFacts.length;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFDCE4C7),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Did You Know?",
+                              style: GoogleFonts.roboto(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green[900],
+                              ),
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              funFacts[actualIndex],
+                              style: GoogleFonts.roboto(
+                                fontSize: 14,
+                                color: Colors.green[800],
+                              ),
+                              textAlign: TextAlign.left,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              SizedBox(height: 20),
+              // Add Plant Button (Still Here!)
+              ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
+                  backgroundColor: Colors.green[900],
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+                  minimumSize: Size(double.infinity, 48),
                 ),
-                child: Text(
-                  "Add Plant",
-                  style: GoogleFonts.roboto(
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
-                ),
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ScanPlantScreen()));
+                },
+                child: Text("Add Plant",
+                    style:
+                        GoogleFonts.roboto(fontSize: 16, color: Colors.white)),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

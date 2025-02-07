@@ -45,6 +45,9 @@ dependencies:
   google_sign_in: ^6.1.6 # For Google Authentication
   flutter_facebook_auth: ^6.1.0 # For Facebook Authentication
   webview_flutter: ^4.0.2
+  flutter_secure_storage: ^9.2.4
+  geolocator: ^13.0.2
+  geocoding: ^3.0.0
 
 
 dev_dependencies:
