@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:async';
-import 'plant_detail_screen.dart';
+import 'plant_detail_screen.dart'; // Import your PlantDetailsScreen
 
 class PlantSearchScreen extends StatefulWidget {
   @override
@@ -13,14 +12,7 @@ class _PlantSearchScreenState extends State<PlantSearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<dynamic> _searchResults = [];
   bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _searchController.addListener(() {
-      setState(() {}); // Update UI when the search field changes
-    });
-  }
+  bool _hasSearched = false;
 
   @override
   void dispose() {
@@ -28,100 +20,268 @@ class _PlantSearchScreenState extends State<PlantSearchScreen> {
     super.dispose();
   }
 
-  // Function to fetch plant details, including image, from the Plant.id API
-  Future<Map<String, dynamic>> fetchPlantDetails(String accessToken) async {
-    final String apiKey = 'jI5fQTt86KSIoBPUXKgjasso1vnt5KLlqJbNqSFARYacXOJPKG';
-    final String detailsEndpoint =
-        'https://plant.id/api/v3/kb/plants/$accessToken?details=common_names%2Curl%2Cdescription%2Crank%2Cgbif_id%2Cinaturalist_id%2Cimage%2Csynonyms%2Cedible_parts%2Cwatering%2Cpropagation_methods&language=en';
+  Future<Map<String, dynamic>?> fetchPlantFromBackend(String plantName) async {
+    final String backendUrl =
+        "http://192.168.1.3:5000/get-plant?name=$plantName";
 
-    int retryCount = 0;
-    const maxRetries = 5;
+    try {
+      final response = await http.get(Uri.parse(backendUrl));
 
-    while (retryCount < maxRetries) {
-      try {
-        final response = await http.get(
-          Uri.parse(detailsEndpoint),
-          headers: {
-            'Api-Key': apiKey,
-            'Content-Type': 'application/json',
-          },
-        );
-
-        if (response.statusCode == 200) {
-          return json.decode(response.body);
-        } else if (response.statusCode == 429) {
-          // Too Many Requests - Handle rate limiting
-          retryCount++;
-          final delay =
-              Duration(seconds: (retryCount * 2)); // Exponential backoff
-          print('Rate limit hit, retrying in ${delay.inSeconds} seconds...');
-          await Future.delayed(delay);
-        } else {
-          print('Error fetching plant details: ${response.reasonPhrase}');
-          break;
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data.containsKey("error")) {
+          print("❌ API Error: ${data["error"]}");
+          return null;
         }
-      } catch (e) {
-        print('Error: $e');
-        break;
-      }
-    }
-    return {};
-  }
-
-  // Remove duplicates based on unique access_token, matched_in, and matched_in_type
-  void removeDuplicatePlants() {
-    final seen = <String>{};
-    _searchResults = _searchResults.where((plant) {
-      final matchedIn = plant['matched_in'] ?? '';
-      final accessToken = plant['access_token'] ?? '';
-      final uniqueKey = '$matchedIn|$accessToken';
-
-      if (seen.contains(uniqueKey)) {
-        return false;
+        print("🔍 Plant Data: $data"); // Debugging response
+        return data;
       } else {
-        seen.add(uniqueKey);
-        return true;
+        print("❌ Server Error: ${response.statusCode}");
+        return null;
       }
-    }).toList();
+    } catch (e) {
+      print("🔥 API Request Failed: $e");
+      return null;
+    }
   }
 
-  // Search for plants using the Plant Search API
-  Future<void> searchPlants() async {
+  Future<void> searchPlant() async {
     final query = _searchController.text.trim();
     if (query.isEmpty) return;
 
     setState(() {
       _isLoading = true;
       _searchResults = [];
+      _hasSearched = true;
     });
 
-    final String apiUrl = 'https://plant.id/api/v3/kb/plants/name_search?q=';
-    final String apiKey = 'jI5fQTt86KSIoBPUXKgjasso1vnt5KLlqJbNqSFARYacXOJPKG';
+    final plantData = await fetchPlantFromBackend(query);
 
-    try {
-      final response = await http.get(
-        Uri.parse('$apiUrl${Uri.encodeComponent(query)}'),
-        headers: {
-          'Api-Key': apiKey,
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          _searchResults = data['entities'] ?? [];
-          removeDuplicatePlants();
-        });
-      } else {
-        print('Error: ${response.reasonPhrase}');
-      }
-    } catch (e) {
-      print('Error: $e');
-    } finally {
+    if (plantData != null) {
       setState(() {
-        _isLoading = false;
+        _searchResults = [plantData];
       });
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  // UI for household plants
+  Widget _buildHouseholdPlants() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.green.shade50,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Text(
+            "Common Household Plants",
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.green,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _buildPlantTile(
+          imagePath: 'assets/images/golden_pothos.jpg',
+          name: "Golden Pothos",
+          details: "Devil's Ivy, Money Plant, Ceylon Creeper",
+          onTap: () {
+            _navigateToPlantDetails("Golden Pothos");
+          },
+        ),
+        _buildPlantTile(
+          imagePath: 'assets/images/peace_lily.jpg',
+          name: "Peace Lily",
+          details: "Spathiphyllum",
+          onTap: () {
+            _navigateToPlantDetails("Peace Lily");
+          },
+        ),
+        _buildPlantTile(
+          imagePath: 'assets/images/monstera.jpg',
+          name: "Monstera",
+          details: "Swiss Cheese Plant",
+          onTap: () {
+            _navigateToPlantDetails("Monstera");
+          },
+        ),
+        _buildPlantTile(
+          imagePath: 'assets/images/snake_plant.jpg',
+          name: "Snake Plant",
+          details: "Sansevieria, Mother-in-Law's Tongue",
+          onTap: () {
+            _navigateToPlantDetails("Snake Plant");
+          },
+        ),
+        _buildPlantTile(
+          imagePath: 'assets/images/aloe_vera.jpg',
+          name: "Aloe Vera",
+          details: "Aloe barbadensis miller",
+          onTap: () {
+            _navigateToPlantDetails("Aloe Vera");
+          },
+        ),
+      ],
+    );
+  }
+
+  // UI for plant search results
+  Widget _buildSearchResults() {
+    return _searchResults.isEmpty
+        ? Center(
+            child: Text(
+              "No plant found.",
+              style: TextStyle(fontSize: 16, color: Colors.black54),
+            ),
+          )
+        : Column(
+            children: _searchResults.map((plant) {
+              final plantName = plant['query_name'] ?? 'Unknown Plant';
+              final imageUrl =
+                  (plant['image'] != null && plant['image']['value'] != null)
+                      ? plant['image']['value']
+                      : '';
+
+              // Get top 3 or 4 common names
+              final commonNames =
+                  List<String>.from(plant['common_names'] ?? []);
+              final topCommonNames =
+                  commonNames.take(4).join(", "); // Take top 4 names
+
+              // If common names are fewer than 4, we just show all available names
+              final details = topCommonNames.isNotEmpty
+                  ? topCommonNames
+                  : "No common names available";
+
+              return GestureDetector(
+                onTap: () {
+                  _navigateToPlantDetails(plantName);
+                },
+                child: _buildPlantTile(
+                  imagePath: imageUrl.isNotEmpty
+                      ? imageUrl
+                      : 'assets/images/default_plant.jpg',
+                  name: plantName,
+                  details: details, // Show common names instead of description
+                  isNetworkImage: imageUrl.isNotEmpty,
+                  onTap: () {
+                    _navigateToPlantDetails(plantName);
+                  },
+                ),
+              );
+            }).toList(),
+          );
+  }
+
+  // Helper function to build plant tile (Supports Network & Local Images)
+  Widget _buildPlantTile({
+    required String imagePath,
+    required String name,
+    required String details,
+    bool isNetworkImage = false, // Flag for network images
+    required VoidCallback onTap, // On tap callback for navigation
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(13.0),
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      child: Row(
+        children: [
+          ClipOval(
+            child: isNetworkImage
+                ? Image.network(
+                    imagePath,
+                    height: 75,
+                    width: 75,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Image.asset(
+                        'assets/images/default_plant.jpg',
+                        height: 75,
+                        width: 75,
+                        fit: BoxFit.cover,
+                      );
+                    },
+                  )
+                : Image.asset(
+                    imagePath,
+                    height: 75,
+                    width: 75,
+                    fit: BoxFit.cover,
+                  ),
+          ),
+          const SizedBox(width: 15),
+
+          // Prevents text overflow
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green[800],
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  details,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black54,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Method to handle navigation to PlantDetailsScreen
+  void _navigateToPlantDetails(String plantName) async {
+    final plantData = await fetchPlantFromBackend(plantName);
+
+    if (plantData != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PlantDetailsScreen(
+            plantName: plantName,
+            imageUrl: plantData['image']['value'] ?? '',
+            plantDescription: plantData['description']?['value'] ?? '',
+            commonNames: List<String>.from(plantData['common_names'] ?? []),
+            edibleParts: List<String>.from(plantData['edible_parts'] ?? []),
+            propagationMethods:
+                List<String>.from(plantData['propagation_methods'] ?? []),
+            watering: plantData['watering'] ?? {"min": 0, "max": 0},
+            wikiUrl: plantData['url'] ?? '',
+          ),
+        ),
+      );
+    } else {
+      // Handle null data case
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to fetch plant data.')),
+      );
     }
   }
 
@@ -137,179 +297,60 @@ class _PlantSearchScreenState extends State<PlantSearchScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // Search Bar
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(25.0),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.search, color: Colors.black54),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (value) {
-                        setState(() {
-                          // Update UI as the user types
-                        });
-                      },
-                      onSubmitted: (_) => searchPlants(),
-                      decoration: InputDecoration(
-                        hintText: "Search plant",
-                        border: InputBorder.none,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              // Search Bar
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(25.0),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.search, color: Colors.green[800]),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: "Search for a plant...",
+                          border: InputBorder.none,
+                        ),
+                        onChanged: (query) {
+                          if (query.isNotEmpty) {
+                            setState(() {
+                              _hasSearched = true;
+                            });
+                          }
+                        },
                       ),
                     ),
-                  ),
-                  if (_searchController.text.isNotEmpty)
                     IconButton(
-                      icon: Icon(Icons.clear, color: Colors.black54),
-                      onPressed: () {
-                        setState(() {
-                          _searchController.clear();
-                          _searchResults = []; // Clear search results
-                        });
-                      },
+                      icon: Icon(Icons.search, color: Colors.green[800]),
+                      onPressed: searchPlant,
                     ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
-            // Search Results
-            Expanded(
-              child: _isLoading
-                  ? Center(child: CircularProgressIndicator())
-                  : _searchResults.isEmpty
-                      ? Center(
-                          child: Text(
-                            "No plants found.",
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.black54,
-                            ),
-                          ),
-                        )
-                      : ListView.builder(
-                          itemCount: _searchResults.length,
-                          itemBuilder: (context, index) {
-                            final plant = _searchResults[index];
-                            final accessToken = plant['access_token'];
+              // Show "Common Household Plants" if no search results
+              _hasSearched && !_isLoading && _searchResults.isEmpty
+                  ? _buildHouseholdPlants()
+                  : _buildSearchResults(),
 
-                            // Safe check for 'matched_in'
-                            final plantName = plant['matched_in'] != null &&
-                                    plant['matched_in'] is String
-                                ? plant['matched_in']
-                                : 'Unknown Plant';
-
-                            // Fetch plant details (including image) for each plant
-                            return FutureBuilder<Map<String, dynamic>>(
-                              future: fetchPlantDetails(accessToken),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return ListTile(
-                                    leading: CircularProgressIndicator(),
-                                    title: Text(plantName),
-                                    subtitle: Text(plant['matched_in_type'] ??
-                                        'Unknown Type'),
-                                  );
-                                }
-
-                                final plantDetails = snapshot.data ?? {};
-                                final imageUrl =
-                                    plantDetails['image']?['value'] ?? '';
-                                final plantDescription =
-                                    plantDetails['description']?['value'] ??
-                                        'No description available';
-
-                                // Convert lists to List<String>
-                                final commonNames = List<String>.from(
-                                    plantDetails['common_names'] ?? []);
-                                final edibleParts = List<String>.from(
-                                    plantDetails['edible_parts'] ?? []);
-                                final propagationMethods = List<String>.from(
-                                    plantDetails['propagation_methods'] ?? []);
-                                final watering = plantDetails['watering'] ??
-                                    {"min": 0, "max": 0};
-                                final wikiUrl = plantDetails['url'] ?? '';
-
-                                return ListTile(
-                                  leading: Container(
-                                    width: 100, // Ensures a larger size
-                                    height: 100, // Ensures a larger size
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      image: imageUrl.isNotEmpty
-                                          ? DecorationImage(
-                                              image: NetworkImage(imageUrl),
-                                              fit: BoxFit.cover,
-                                            )
-                                          : null,
-                                    ),
-                                    child: imageUrl.isEmpty
-                                        ? Icon(
-                                            Icons.local_florist,
-                                            size: 60,
-                                            color: Colors.green,
-                                          ) // Larger icon if no image
-                                        : null,
-                                  ),
-                                  title: Text(
-                                    plantName,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.green[800],
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    plant['matched_in_type'] ?? 'Unknown Type',
-                                    style: TextStyle(color: Colors.black54),
-                                  ),
-                                  onTap: () {
-                                    // Navigate to PlantDetailsScreen with all plant data (excluding taxonomy)
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            PlantDetailsScreen(
-                                          plantName: plantName,
-                                          imageUrl: imageUrl,
-                                          plantDescription: plantDescription,
-                                          commonNames: commonNames is List
-                                              ? List<String>.from(commonNames
-                                                  .map((e) => e.toString()))
-                                              : [], // Casted to List<String>
-                                          edibleParts: edibleParts is List
-                                              ? List<String>.from(edibleParts
-                                                  .map((e) => e.toString()))
-                                              : [],
-                                          propagationMethods: propagationMethods
-                                                  is List
-                                              ? List<String>.from(
-                                                  propagationMethods
-                                                      .map((e) => e.toString()))
-                                              : [], // Casted to List<String>
-                                          watering: watering,
-                                          wikiUrl: wikiUrl,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                            );
-                          },
-                        ),
-            ),
-          ],
+              // Show loading spinner if searching
+              if (_isLoading)
+                Center(
+                  child: CircularProgressIndicator(),
+                ),
+            ],
+          ),
         ),
       ),
     );

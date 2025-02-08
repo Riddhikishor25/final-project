@@ -97,6 +97,7 @@ flutter:
    - assets/icons/seeds_icon.png
    - assets/icons/flower_icon.png
    - assets/icons/leaf_icon.png
+   - assets/images/default_plant.png
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

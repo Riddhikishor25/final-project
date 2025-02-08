@@ -107,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> fetchFunFacts() async {
-    final String funFactApiUrl = 'http://192.168.1.6:5000/get_fun_fact';
+    final String funFactApiUrl = 'http://192.168.1.3:5000/get_fun_fact';
 
     try {
       final response = await http.get(Uri.parse(funFactApiUrl));
