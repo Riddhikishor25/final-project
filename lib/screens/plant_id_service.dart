@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class PlantIdService {
-  final String apiKey = "8Hlh2zEWKWYzGWR6nwV2KXvLvMMIBFDHOHlAJasUN5cNLjdSsu";
+  final String apiKey = "jI5fQTt86KSIoBPUXKgjasso1vnt5KLlqJbNqSFARYacXOJPKG";
   final String endpoint = "https://plant.id/api/v3/identification";
 
   Future<Map<String, dynamic>?> identifyPlant(File imageFile) async {
@@ -20,7 +20,7 @@ class PlantIdService {
       // Set headers
       Map<String, String> headers = {
         "Api-Key":
-            "8Hlh2zEWKWYzGWR6nwV2KXvLvMMIBFDHOHlAJasUN5cNLjdSsu", // Add "Bearer" followed by the API key
+            "jI5fQTt86KSIoBPUXKgjasso1vnt5KLlqJbNqSFARYacXOJPKG", // Add "Bearer" followed by the API key
         "Content-Type": "application/json",
       };
 

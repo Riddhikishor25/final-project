@@ -4,7 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Secure t
 
 class ApiService {
   static const String baseUrl =
-      'http://192.168.1.3:5000'; // Update for live server
+      'http://192.168.1.6:5000'; // Update for live server
   final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   // User Signup

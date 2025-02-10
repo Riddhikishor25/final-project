@@ -2,6 +2,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'plant_search_screen.dart';
+import 'plant_detail_screen.dart';
+import 'plant_id_service.dart'; // Import the PlantIdService class
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:convert'; // For base64 encoding
+import 'dart:typed_data';
+import 'package:image/image.dart' as img; // Import the image package
+import 'package:path_provider/path_provider.dart'; // Import the path_provider package
 
 class ScanPlantScreen extends StatefulWidget {
   @override
@@ -11,14 +19,228 @@ class ScanPlantScreen extends StatefulWidget {
 class _ScanPlantScreenState extends State<ScanPlantScreen> {
   final ImagePicker _picker = ImagePicker();
   File? _selectedImage;
+  final PlantIdService _plantIdService =
+      PlantIdService(); // Create instance of PlantIdService
 
-  // Pick image from the camera or gallery
+  // Function to choose image source (camera or gallery)
+  Future<void> _chooseImageSource() async {
+    print("Choosing image source..."); // Debugging
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Wrap(
+          children: [
+            ListTile(
+              leading: Icon(Icons.camera_alt),
+              title: Text('Take a Photo'),
+              onTap: () {
+                Navigator.pop(context); // Close the bottom sheet
+                print("Camera option selected"); // Debugging
+                pickImage(ImageSource.camera); // Pick from camera
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.photo_library),
+              title: Text('Choose from Gallery'),
+              onTap: () {
+                Navigator.pop(context); // Close the bottom sheet
+                print("Gallery option selected"); // Debugging
+                pickImage(ImageSource.gallery); // Pick from gallery
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> pickImage(ImageSource source) async {
     final pickedFile = await _picker.pickImage(source: source);
     if (pickedFile != null) {
       setState(() {
         _selectedImage = File(pickedFile.path);
       });
+
+      // Ensure the image is in JPEG format
+      //final tempImage = await _selectedImage!.readAsBytes();
+      //final jpegImage = await _convertToJpeg(tempImage);
+
+      // If an image is selected, call the plant identification API using the Flask backend
+      if (_selectedImage != null) {
+        //var result = await identifyPlantWithFlaskApi(_selectedImage!);
+        PlantIdService plant_id = new PlantIdService();
+        var result = await plant_id.identifyPlant(_selectedImage!);
+        print(result);
+        if (result != null &&
+            result['result']['classification']['suggestions'][0] != null &&
+            result['result']['classification']['suggestions'][0].isNotEmpty) {
+          // Extract plant name from the API response
+          String plantName =
+              result['result']['classification']['suggestions'][0]['name'];
+
+          // Fetch plant details from your Flask API
+          var plantData = await fetchPlantDetails(plantName);
+
+          if (plantData != null) {
+            // Navigate to PlantDetailScreen with the plant data
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PlantDetailsScreen(
+                  plantName: plantData['name'],
+                  imageUrl: plantData['image']['value'] ?? '',
+                  plantDescription: plantData['description']['value'] ?? '',
+                  commonNames:
+                      List<String>.from(plantData['common_names'] ?? []),
+                  edibleParts:
+                      List<String>.from(plantData['edible_parts'] ?? []),
+                  propagationMethods:
+                      List<String>.from(plantData['propagation_methods'] ?? []),
+                  watering: plantData['watering'] ?? {"min": 0, "max": 0},
+                  wikiUrl: plantData['url'] ?? '',
+                ),
+              ),
+            );
+          } else {
+            // If plant details are not found, show an alert dialog
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text('Plant Not Found'),
+                content: Text('We couldn\'t fetch the details for the plant.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('OK'),
+                  ),
+                ],
+              ),
+            );
+          }
+        } else {
+          // If plant identification failed, show an alert dialog
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text('Plant Not Identified'),
+              content: Text(
+                  'We couldn\'t identify the plant. Please try again with a clearer image.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<File?> _convertToJpeg(List<int> imageBytes) async {
+    try {
+      final img.Image? image = img.decodeImage(Uint8List.fromList(imageBytes));
+      if (image == null) {
+        print("Error decoding image");
+        return null;
+      }
+
+      // Encode the image to JPEG format
+      List<int> jpegBytes = img.encodeJpg(image);
+
+      // Convert List<int> to Uint8List
+      Uint8List byteData = Uint8List.fromList(jpegBytes);
+
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/temp_image.jpg');
+      await tempFile
+          .writeAsBytes(byteData); // Write the image as bytes to the file
+
+      return tempFile;
+    } catch (e) {
+      print('Error converting image to JPEG: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> identifyPlantWithFlaskApi(
+      File imageFile) async {
+    final String apiUrl =
+        'http://192.168.1.6:5000/identify-by-image'; // Flask API URL
+
+    try {
+      // Load the image and convert to a byte list
+      //img.Image? image = img.decodeImage(await imageFile.readAsBytes());
+
+      // Check if the image is null
+      // if (image == null) {
+      //  print("Error decoding image");
+      // return null;
+      // }
+
+      // Encode image to JPEG format
+      //List<int> jpegBytes = img.encodeJpg(image);
+
+      // Convert List<int> to Uint8List
+      //Uint8List byteData = Uint8List.fromList(jpegBytes);
+      String base64Image = base64Encode(imageFile.readAsBytesSync());
+      print(base64Image); // Debugging base64 string
+
+      // Prepare the payload for the Flask backend
+      var payload = {
+        "images": "data:image/jpeg;base64," + base64Image,
+        "latitude": 49.207,
+        "longitude": 16.608,
+        "similar_images": true
+        // Ensuring proper format
+      };
+      // Debugging base64 string
+
+      var response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Api-Key':
+              'jI5fQTt86KSIoBPUXKgjasso1vnt5KLlqJbNqSFARYacXOJPKG', // Add your actual API key
+        },
+        body: json.encode(payload),
+      );
+
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        return result;
+      } else {
+        print('Failed to identify plant: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error identifying plant: $e');
+      return null;
+    }
+  }
+
+  // Fetch plant details from the Flask API
+  Future<Map<String, dynamic>?> fetchPlantDetails(String plantName) async {
+    final String apiUrl =
+        'http://192.168.1.6:5000/get-plant'; // Replace with your Flask API URL
+
+    try {
+      final response = await http.get(
+        Uri.parse('$apiUrl?name=$plantName'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data; // Return the plant details as a map
+      } else {
+        print('Failed to fetch plant details: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching plant details: $e');
+      return null;
     }
   }
 
@@ -179,7 +401,7 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton.icon(
-                  onPressed: () => pickImage(ImageSource.camera),
+                  onPressed: () => _chooseImageSource(),
                   icon: const Icon(Icons.camera_alt, color: Colors.white),
                   label: const Text(
                     "Scan plant",
