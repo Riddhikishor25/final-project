@@ -25,7 +25,7 @@ class _PlantListScreenState extends State<PlantListScreen> {
   Future<void> fetchMyPlants() async {
     final response = await http.get(
       Uri.parse(
-          "http://192.168.1.7:5000/get_my_plants?username=${widget.username}"),
+          "http://192.168.59.92:5000/get_my_plants?username=${widget.username}"),
     );
 
     if (response.statusCode == 200) {

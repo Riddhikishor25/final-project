@@ -22,7 +22,7 @@ class _PlantSearchScreenState extends State<PlantSearchScreen> {
 
   Future<Map<String, dynamic>?> fetchPlantFromBackend(String plantName) async {
     final String backendUrl =
-        "http://192.168.1.7:5000/get-plant?name=$plantName";
+        "http://192.168.59.92:5000/get-plant?name=$plantName";
 
     try {
       final response = await http.get(Uri.parse(backendUrl));

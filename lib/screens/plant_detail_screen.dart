@@ -156,7 +156,7 @@ class PlantDetailsScreen extends StatelessWidget {
             bottom: 20, // Fixed position 20px from the bottom
             left: 20, // Position at the bottom left corner
             child: _buildActionButton("Add plant", () {
-              addPlant('riddhi25', plantName, imageUrl); // Pass actual data
+              addPlant('riddh25', plantName, imageUrl); // Pass actual data
             }),
           ),
           Positioned(
@@ -173,7 +173,6 @@ class PlantDetailsScreen extends StatelessWidget {
   }
 
   // Action button widget for "Add Plant" and "Favourite"
-  // Action button widget for "Add Plant" and "Favourite"
   Widget _buildActionButton(
     String label,
     Function onPressed, {
@@ -186,7 +185,7 @@ class PlantDetailsScreen extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: Color(0xFF4CAF50), // Green background
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(25), // Pill shape
+          borderRadius: BorderRadius.circular(25),
         ),
         padding: isFavouriteButton
             ? EdgeInsets.symmetric(
@@ -217,7 +216,7 @@ class PlantDetailsScreen extends StatelessWidget {
   Future<void> addPlant(
       String username, String plantName, String imageUrl) async {
     final url = Uri.parse(
-        'http://192.168.1.5:5000/add_plant'); // Replace with your backend URL
+        'http://192.168.59.92:5000/add_plant'); // Replace with your backend URL
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -239,7 +238,7 @@ class PlantDetailsScreen extends StatelessWidget {
   Future<void> favoritePlant(
       String username, String plantName, String imageUrl) async {
     final url = Uri.parse(
-        'http://192.168.1.5:5000/favourite_plant'); // Replace with your backend URL
+        'http://192.168.59.92:5000/favourite_plant'); // Replace with your backend URL
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},

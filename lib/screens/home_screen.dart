@@ -35,7 +35,14 @@ class _HomeScreenState extends State<HomeScreen> {
     getCurrentLocation();
     fetchFunFacts();
     setGreeting();
-    fetchMyPlants(); // Fetch user's plants on screen load
+    fetchMyPlants();
+
+    // ✅ Run after UI is fully built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _showWelcomePopup();
+      }
+    });
   }
 
   @override
@@ -127,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> fetchFunFacts() async {
-    final String funFactApiUrl = 'http://192.168.1.7:5000/get_fun_fact';
+    final String funFactApiUrl = 'http://192.168.59.92:5000/get_fun_fact';
 
     try {
       final response = await http.get(Uri.parse(funFactApiUrl));
@@ -156,7 +163,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> fetchMyPlants() async {
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.7:5000/get_my_plants?username=${widget.username}'));
+          'http://192.168.59.92:5000/get_my_plants?username=${widget.username}'));
 
       if (response.statusCode == 200) {
         final decodedData = jsonDecode(response.body);
@@ -179,6 +186,29 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       print('Error: $e');
     }
+  }
+
+  // ✅ Function to show welcome message as a popup
+  void _showWelcomePopup() {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent closing by tapping outside
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Welcome Back!"),
+          content:
+              Text("Hello, ${widget.username}! 🌱 Your plants missed you!"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context), // Close popup
+              child: Text("Okay", style: TextStyle(color: Colors.green)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

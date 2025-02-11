@@ -24,7 +24,7 @@ class _FavouritePlantsScreenState extends State<FavouritePlantsScreen> {
 
   Future<void> fetchFavoritePlants() async {
     final String apiUrl =
-        'http://192.168.1.7:5000/get_favorites?username=${widget.username}';
+        'http://192.168.59.92:5000/get_favorites?username=${widget.username}';
 
     try {
       final response = await http.get(Uri.parse(apiUrl));

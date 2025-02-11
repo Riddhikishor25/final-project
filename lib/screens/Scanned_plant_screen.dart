@@ -203,7 +203,7 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
         headers: {
           'Content-Type': 'application/json',
           'Api-Key':
-              'jI5fQTt86KSIoBPUXKgjasso1vnt5KLlqJbNqSFARYacXOJPKG', // Add your actual API key
+              '9Lq9z0dToP2CLh1hK0r4gyz8dDYJzp3Wy2UmotaUnoM0FaCSrP', // Add your actual API key
         },
         body: json.encode(payload),
       );
@@ -224,7 +224,7 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
   // Fetch plant details from the Flask API
   Future<Map<String, dynamic>?> fetchPlantDetails(String plantName) async {
     final String apiUrl =
-        'http://192.168.1.8:5000/get-plant'; // Replace with your Flask API URL
+        'http://192.168.59.92:5000/get-plant'; // Replace with your Flask API URL
 
     try {
       final response = await http.get(
