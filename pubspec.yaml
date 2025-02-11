@@ -28,6 +28,8 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  share_plus: ^10.1.4  # Update to the latest version
+  flutter_secure_storage: ^9.2.4
   image: ^3.0.1
   path_provider: ^2.0.11
   material_design_icons_flutter: ^5.0.0
@@ -47,7 +49,6 @@ dependencies:
   google_sign_in: ^6.1.6 # For Google Authentication
   flutter_facebook_auth: ^6.1.0 # For Facebook Authentication
   webview_flutter: ^4.0.2
-  flutter_secure_storage: ^9.2.4
   geolocator: ^13.0.2
   geocoding: ^3.0.0
 

@@ -15,10 +15,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
-      // Proper initialization
-      designSize: Size(360, 690), // Set the design screen size
-      minTextAdapt: true, // Optional: makes text scale smoothly
-      splitScreenMode: true, // Optional: handles split-screen devices
+      designSize: Size(360, 690),
+      minTextAdapt: true,
+      splitScreenMode: true,
       builder: (context, child) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
@@ -30,7 +29,18 @@ class MyApp extends StatelessWidget {
           home: SplashScreen(),
           routes: {
             '/login': (context) => LoginScreen(),
-            '/home': (context) => HomeScreen(),
+          },
+          onGenerateRoute: (settings) {
+            if (settings.name == '/home') {
+              final args = settings.arguments as Map<String, dynamic>?;
+
+              if (args != null && args.containsKey('username')) {
+                return MaterialPageRoute(
+                  builder: (context) => HomeScreen(username: args['username']),
+                );
+              }
+            }
+            return null;
           },
         );
       },

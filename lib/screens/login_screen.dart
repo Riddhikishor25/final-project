@@ -41,51 +41,31 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => isLoading = true);
 
     try {
-      print("Sending API request...");
+      print("Sending login request to backend...");
       final result = await apiService.login(email, password);
-      print("Full API Response: $result");
 
       if (result == null) {
-        print("Error: API response is null.");
         _showErrorDialog("Unexpected error: No response from server.");
         return;
       }
 
-      // ✅ FIXED: Check "message" instead of "success"
-      if (result["message"] == "Login successful") {
-        print("Login successful!");
+      if (result.containsKey("message") &&
+          result["message"] == "Login successful") {
+        String token = result['token'];
+        String username =
+            result['user']; // ✅ Get username from backend response
 
-        if (result.containsKey("token") && result.containsKey("user")) {
-          String token = result['token'];
-          String username =
-              result['user']; // ✅ FIXED: "user" instead of "username"
+        print("Login successful! Received Username: $username");
+        await _secureStorage.write(key: 'token', value: token);
+        await _secureStorage.write(key: 'username', value: username);
 
-          print("Received Token: $token");
-          print("Received Username: $username");
+        if (!mounted) return;
 
-          await _secureStorage.write(key: 'token', value: token);
-          print("Token saved successfully!");
-
-          if (!mounted) return;
-
-          // Show success dialog before navigating
-          await _showSuccessDialog("Welcome back, $username!");
-
-          if (mounted) {
-            print("Navigating to HomeScreen...");
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => HomeScreen()),
-            );
-          }
-        } else {
-          print("Error: Missing token or user in API response.");
-          _showErrorDialog("Login response is missing required data.");
-        }
+        await _showSuccessDialog(
+            "Welcome back, $username!", username); // ✅ Pass username
       } else {
-        print("Login failed: ${result["message"]}");
-        _showErrorDialog(
-            result["message"] ?? "Login failed. Please try again.");
+        print("Login failed: ${result["error"]}");
+        _showErrorDialog(result["error"] ?? "Login failed. Please try again.");
       }
     } catch (e) {
       print("ERROR DURING LOGIN: $e");
@@ -121,7 +101,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // Show success dialog before navigating
-  Future<void> _showSuccessDialog(String message) async {
+  Future<void> _showSuccessDialog(String message, String username) async {
+    // ✅ Accept username
     if (!mounted) return;
 
     await showDialog(
@@ -145,7 +126,10 @@ class _LoginScreenState extends State<LoginScreen> {
     Future.delayed(Duration(milliseconds: 300), () {
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => HomeScreen()),
+          MaterialPageRoute(
+            builder: (context) =>
+                HomeScreen(username: username), // ✅ Pass username
+          ),
           (route) => false, // Remove all previous routes
         );
       }
@@ -203,41 +187,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       : const Text("Continue",
                           style: TextStyle(fontSize: 16, color: Colors.white)),
                 ),
-                const SizedBox(height: 10),
-                const Text("or",
-                    style: TextStyle(fontSize: 16, color: Colors.black54)),
-                const SizedBox(height: 10),
-                ElevatedButton.icon(
-                  onPressed: () {}, // Add Google login function
-                  icon: Image.asset('assets/icons/google_logo3.png',
-                      height: 24, width: 24),
-                  label: const Text("Continue with Google",
-                      style: TextStyle(fontSize: 16, color: Colors.black87)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        side: BorderSide(color: Colors.grey, width: 0.8)),
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 15, horizontal: 50),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                GestureDetector(
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => HomeScreen())),
-                  child: const Text("Continue as a guest",
-                      style: TextStyle(
-                          fontSize: 16, decoration: TextDecoration.underline)),
-                ),
-                const SizedBox(height: 15),
-                GestureDetector(
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => SignUpScreen())),
-                  child: const Text("Don't have an account? Sign Up",
-                      style: TextStyle(fontSize: 16, color: Colors.green)),
-                ),
-                const SizedBox(height: 15),
               ],
             ),
           ),

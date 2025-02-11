@@ -168,7 +168,7 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
   Future<Map<String, dynamic>?> identifyPlantWithFlaskApi(
       File imageFile) async {
     final String apiUrl =
-        'http://192.168.1.6:5000/identify-by-image'; // Flask API URL
+        'http://192.168.1.8:5000/identify-by-image'; // Flask API URL
 
     try {
       // Load the image and convert to a byte list
@@ -224,7 +224,7 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
   // Fetch plant details from the Flask API
   Future<Map<String, dynamic>?> fetchPlantDetails(String plantName) async {
     final String apiUrl =
-        'http://192.168.1.6:5000/get-plant'; // Replace with your Flask API URL
+        'http://192.168.1.8:5000/get-plant'; // Replace with your Flask API URL
 
     try {
       final response = await http.get(

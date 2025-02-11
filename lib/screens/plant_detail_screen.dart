@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:share_plus/share_plus.dart';
 
 class PlantDetailsScreen extends StatelessWidget {
   final String plantName;
@@ -37,18 +40,20 @@ class PlantDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     double screenHeight = MediaQuery.of(context).size.height;
+    double imageHeight = screenHeight * 0.45; // Height of the plant image
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
+          // Scrollable content
           SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Plant image
                 Container(
-                  height: screenHeight * 0.45,
+                  height: imageHeight, // Height of the image
                   width: double.infinity,
                   child: Image.network(
                     imageUrl,
@@ -113,6 +118,9 @@ class PlantDetailsScreen extends StatelessWidget {
                         _buildPlantDetails(),
                         const SizedBox(height: 20),
                         _buildWikiButton(wikiUrl),
+                        // Add space at the bottom to avoid obstruction by the buttons
+                        SizedBox(
+                            height: 120), // Add padding space for the buttons
                       ],
                     ),
                   ),
@@ -120,6 +128,7 @@ class PlantDetailsScreen extends StatelessWidget {
               ],
             ),
           ),
+
           // Positioned icons (close and share)
           Positioned(
             top: 40,
@@ -127,14 +136,125 @@ class PlantDetailsScreen extends StatelessWidget {
             child: _buildIconButton(Icons.close, () => Navigator.pop(context),
                 isCircular: true),
           ),
+          // Share button
           Positioned(
             top: 40,
             right: 10,
-            child: _buildIconButton(Icons.share, () {}, isCircular: false),
+            child: IconButton(
+              icon: Icon(Icons.share),
+              onPressed: () {
+                // Share the plant information (can customize message)
+                String shareContent =
+                    'Check out this plant: $plantName\n$plantDescription\n\nLearn more: $wikiUrl';
+                Share.share(shareContent);
+              },
+            ),
+          ),
+
+          // Fixed buttons that will scroll with the content
+          Positioned(
+            bottom: 20, // Fixed position 20px from the bottom
+            left: 20, // Position at the bottom left corner
+            child: _buildActionButton("Add plant", () {
+              addPlant('riddhi25', plantName, imageUrl); // Pass actual data
+            }),
+          ),
+          Positioned(
+            bottom: 20, // Fixed position 20px from the bottom
+            right: 20, // Position at the bottom right corner
+            child: _buildActionButton("", () {
+              favoritePlant(
+                  'riddhi25', plantName, imageUrl); // Pass actual data
+            }, icon: Icons.favorite_border), // Heart icon for Favourite
           ),
         ],
       ),
     );
+  }
+
+  // Action button widget for "Add Plant" and "Favourite"
+  // Action button widget for "Add Plant" and "Favourite"
+  Widget _buildActionButton(
+    String label,
+    Function onPressed, {
+    IconData? icon,
+    bool isFavouriteButton =
+        false, // Flag to determine if it's the Favourite button
+  }) {
+    return ElevatedButton(
+      onPressed: () => onPressed(),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Color(0xFF4CAF50), // Green background
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(25), // Pill shape
+        ),
+        padding: isFavouriteButton
+            ? EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: 30) // Custom padding for Favourite button
+            : EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: 50), // Custom padding for Add Plant button
+        minimumSize: isFavouriteButton
+            ? Size(30, 30) // Smaller size for Favourite button
+            : Size(100, 45), // Larger size for Add Plant button
+      ),
+      child: icon != null
+          ? Icon(icon,
+              color: Colors.white, size: 25) // Smaller icon for Favourite
+          : Text(
+              label,
+              style: TextStyle(
+                fontSize: 16, // Smaller font size for Add Plant
+                fontWeight: FontWeight.bold, // Bold text for Add Plant
+                color: Colors.white,
+              ),
+            ),
+    );
+  }
+
+// Add plant function to make the API call
+  Future<void> addPlant(
+      String username, String plantName, String imageUrl) async {
+    final url = Uri.parse(
+        'http://192.168.1.5:5000/add_plant'); // Replace with your backend URL
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'username': username,
+        'plant_name': plantName,
+        'image_url': imageUrl,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      print('Plant added successfully!');
+    } else {
+      print('Failed to add plant: ${response.body}');
+    }
+  }
+
+// Favourite plant function to make the API call
+  Future<void> favoritePlant(
+      String username, String plantName, String imageUrl) async {
+    final url = Uri.parse(
+        'http://192.168.1.5:5000/favourite_plant'); // Replace with your backend URL
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'username': username,
+        'plant_name': plantName,
+        'image_url': imageUrl,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      print('Plant favorited successfully!');
+    } else {
+      print('Failed to favorite plant: ${response.body}');
+    }
   }
 
   Widget _buildTag(String label, Color color) {
