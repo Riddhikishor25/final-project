@@ -62,81 +62,83 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
         _selectedImage = File(pickedFile.path);
       });
 
-      // Ensure the image is in JPEG format
-      //final tempImage = await _selectedImage!.readAsBytes();
-      //final jpegImage = await _convertToJpeg(tempImage);
-
-      // If an image is selected, call the plant identification API using the Flask backend
-      if (_selectedImage != null) {
-        //var result = await identifyPlantWithFlaskApi(_selectedImage!);
-        PlantIdService plant_id = new PlantIdService();
-        var result = await plant_id.identifyPlant(_selectedImage!);
-        print(result);
-        if (result != null &&
-            result['result']['classification']['suggestions'][0] != null &&
-            result['result']['classification']['suggestions'][0].isNotEmpty) {
-          // Extract plant name from the API response
-          String plantName =
-              result['result']['classification']['suggestions'][0]['name'];
-
-          // Fetch plant details from your Flask API
-          var plantData = await fetchPlantDetails(plantName);
-
-          if (plantData != null) {
-            // Navigate to PlantDetailScreen with the plant data
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => PlantDetailsScreen(
-                  plantName: plantData['name'],
-                  imageUrl: plantData['image']['value'] ?? '',
-                  plantDescription: plantData['description']['value'] ?? '',
-                  commonNames:
-                      List<String>.from(plantData['common_names'] ?? []),
-                  edibleParts:
-                      List<String>.from(plantData['edible_parts'] ?? []),
-                  propagationMethods:
-                      List<String>.from(plantData['propagation_methods'] ?? []),
-                  watering: plantData['watering'] ?? {"min": 0, "max": 0},
-                  wikiUrl: plantData['url'] ?? '',
-                ),
-              ),
-            );
-          } else {
-            // If plant details are not found, show an alert dialog
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: Text('Plant Not Found'),
-                content: Text('We couldn\'t fetch the details for the plant.'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('OK'),
-                  ),
-                ],
-              ),
-            );
-          }
-        } else {
-          // If plant identification failed, show an alert dialog
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text('Plant Not Identified'),
-              content: Text(
-                  'We couldn\'t identify the plant. Please try again with a clearer image.'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('OK'),
-                ),
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 10),
+                Text("Scanning plant... Please wait."),
               ],
             ),
           );
+        },
+      );
+
+      // Call the plant identification API
+      PlantIdService plant_id = PlantIdService();
+      var result = await plant_id.identifyPlant(_selectedImage!);
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      if (result != null &&
+          result['result']['classification']['suggestions'][0] != null &&
+          result['result']['classification']['suggestions'][0].isNotEmpty) {
+        String plantName =
+            result['result']['classification']['suggestions'][0]['name'];
+
+        // Fetch plant details from your API
+        var plantData = await fetchPlantDetails(plantName);
+
+        if (plantData != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PlantDetailsScreen(
+                plantName: plantData['name'],
+                imageUrl: plantData['image']['value'] ?? '',
+                plantDescription: plantData['description']['value'] ?? '',
+                commonNames: List<String>.from(plantData['common_names'] ?? []),
+                edibleParts: List<String>.from(plantData['edible_parts'] ?? []),
+                propagationMethods:
+                    List<String>.from(plantData['propagation_methods'] ?? []),
+                watering: plantData['watering'] ?? {"min": 0, "max": 0},
+                wikiUrl: plantData['url'] ?? '',
+              ),
+            ),
+          );
+        } else {
+          _showErrorDialog("Plant Not Found",
+              "We couldn't fetch the details for the plant.");
         }
+      } else {
+        _showErrorDialog(
+            "Plant Not Identified", "Please try again with a clearer image.");
       }
     }
+  }
+
+// Function to show an error dialog
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<File?> _convertToJpeg(List<int> imageBytes) async {
@@ -168,7 +170,7 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
   Future<Map<String, dynamic>?> identifyPlantWithFlaskApi(
       File imageFile) async {
     final String apiUrl =
-        'http://192.168.1.8:5000/identify-by-image'; // Flask API URL
+        'http://192.168.59.92:5000/identify-by-image'; // Flask API URL
 
     try {
       // Load the image and convert to a byte list
@@ -412,7 +414,7 @@ class _ScanPlantScreenState extends State<ScanPlantScreen> {
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade400,
+                    backgroundColor: Colors.green.shade900,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                     ),

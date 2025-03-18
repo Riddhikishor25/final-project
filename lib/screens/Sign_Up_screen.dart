@@ -24,7 +24,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String? passwordError;
   String? confirmPasswordError;
 
-  final String baseUrl = "http://192.168.59.92:5000"; // Flask server URL
+  final String baseUrl = "http://192.168.1.8:5000"; // Flask server URL
 
   @override
   void dispose() {
@@ -160,24 +160,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 Image.asset('assets/illustrations/signup_logo.gif',
                     height: 210),
                 const SizedBox(height: 10),
-                _buildTextField(_usernameController, "Enter Username",
-                    _validateUsername, usernameError),
+                _buildTextField(
+                    _usernameController, "Enter Username", null, usernameError),
                 const SizedBox(height: 15),
-                _buildTextField(_emailController, "Enter Email", _validateEmail,
-                    emailError),
-                const SizedBox(height: 15),
-                _buildPasswordField(_passwordController, "Password", true,
-                    _validatePassword, passwordError),
+                _buildTextField(
+                    _emailController, "Enter Email", null, emailError),
                 const SizedBox(height: 15),
                 _buildPasswordField(
-                    _confirmPasswordController,
-                    "Confirm Password",
-                    false,
-                    _validateConfirmPassword,
-                    confirmPasswordError),
+                    _passwordController, "Password", true, null, passwordError),
+                const SizedBox(height: 15),
+                _buildPasswordField(_confirmPasswordController,
+                    "Confirm Password", false, null, confirmPasswordError),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: isLoading ? null : _signUpWithEmail,
+                  onPressed: isLoading ? null : () {},
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     shape: RoundedRectangleBorder(
@@ -189,6 +185,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ? CircularProgressIndicator(color: Colors.white)
                       : Text("Sign Up",
                           style: TextStyle(fontSize: 16, color: Colors.white)),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {}, // Placeholder for Google Sign-In
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        side: BorderSide(color: Colors.grey, width: 0.8)),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 15, horizontal: 50),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.asset(
+                        'assets/icons/google_logo3.png',
+                        height: 24,
+                        width: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Text("Continue with Google",
+                          style: TextStyle(fontSize: 16, color: Colors.black)),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 20),
                 GestureDetector(
@@ -205,13 +226,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Widget _buildTextField(TextEditingController controller, String hintText,
-      VoidCallback onChanged, String? errorText) {
+      VoidCallback? onChanged, String? errorText) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextField(
           controller: controller,
-          onChanged: (_) => onChanged(),
+          onChanged: (_) => onChanged?.call(),
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.grey.shade200,
@@ -233,7 +254,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Widget _buildPasswordField(TextEditingController controller, String hintText,
-      bool isPassword, VoidCallback onChanged, String? errorText) {
+      bool isPassword, VoidCallback? onChanged, String? errorText) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -241,7 +262,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           controller: controller,
           obscureText:
               isPassword ? !_passwordVisible : !_confirmPasswordVisible,
-          onChanged: (_) => onChanged(),
+          onChanged: (_) => onChanged?.call(),
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.grey.shade200,

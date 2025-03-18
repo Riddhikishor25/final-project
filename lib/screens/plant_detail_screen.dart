@@ -216,7 +216,7 @@ class PlantDetailsScreen extends StatelessWidget {
   Future<void> addPlant(
       String username, String plantName, String imageUrl) async {
     final url = Uri.parse(
-        'http://192.168.59.92:5000/add_plant'); // Replace with your backend URL
+        'http://192.168.1.8:5000/add_plant'); // Replace with your backend URL
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},

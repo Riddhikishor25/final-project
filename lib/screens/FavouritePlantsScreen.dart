@@ -80,7 +80,11 @@ class _FavouritePlantsScreenState extends State<FavouritePlantsScreen> {
         onPressed: () {
           Navigator.pop(context);
         },
-        child: Icon(Icons.qr_code_scanner, color: Colors.white, size: 32),
+        child: Image.asset(
+          'assets/icons/scan_icon.png',
+          width: 150, // Adjust size as needed
+          height: 150,
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 

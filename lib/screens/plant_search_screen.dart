@@ -68,223 +68,6 @@ class _PlantSearchScreenState extends State<PlantSearchScreen> {
     });
   }
 
-  // UI for household plants
-  Widget _buildHouseholdPlants() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.green.shade50,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Text(
-            "Common Household Plants",
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.green,
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        _buildPlantTile(
-          imagePath: 'assets/images/golden_pothos.jpg',
-          name: "Golden Pothos",
-          details: "Devil's Ivy, Money Plant, Ceylon Creeper",
-          onTap: () {
-            _navigateToPlantDetails("Golden Pothos");
-          },
-        ),
-        _buildPlantTile(
-          imagePath: 'assets/images/peace_lily.jpg',
-          name: "Peace Lily",
-          details: "Spathiphyllum",
-          onTap: () {
-            _navigateToPlantDetails("Peace Lily");
-          },
-        ),
-        _buildPlantTile(
-          imagePath: 'assets/images/monstera.jpg',
-          name: "Monstera",
-          details: "Swiss Cheese Plant",
-          onTap: () {
-            _navigateToPlantDetails("Monstera");
-          },
-        ),
-        _buildPlantTile(
-          imagePath: 'assets/images/snake_plant.jpg',
-          name: "Snake Plant",
-          details: "Sansevieria, Mother-in-Law's Tongue",
-          onTap: () {
-            _navigateToPlantDetails("Snake Plant");
-          },
-        ),
-        _buildPlantTile(
-          imagePath: 'assets/images/aloe_vera.jpg',
-          name: "Aloe Vera",
-          details: "Aloe barbadensis miller",
-          onTap: () {
-            _navigateToPlantDetails("Aloe Vera");
-          },
-        ),
-      ],
-    );
-  }
-
-  // UI for plant search results
-  Widget _buildSearchResults() {
-    return _searchResults.isEmpty
-        ? Center(
-            child: Text(
-              "No plant found.",
-              style: TextStyle(fontSize: 16, color: Colors.black54),
-            ),
-          )
-        : Column(
-            children: _searchResults.map((plant) {
-              final plantName = plant['query_name'] ?? 'Unknown Plant';
-              final imageUrl =
-                  (plant['image'] != null && plant['image']['value'] != null)
-                      ? plant['image']['value']
-                      : '';
-
-              // Get top 3 or 4 common names
-              final commonNames =
-                  List<String>.from(plant['common_names'] ?? []);
-              final topCommonNames =
-                  commonNames.take(4).join(", "); // Take top 4 names
-
-              // If common names are fewer than 4, we just show all available names
-              final details = topCommonNames.isNotEmpty
-                  ? topCommonNames
-                  : "No common names available";
-
-              return GestureDetector(
-                onTap: () {
-                  _navigateToPlantDetails(plantName);
-                },
-                child: _buildPlantTile(
-                  imagePath: imageUrl.isNotEmpty
-                      ? imageUrl
-                      : 'assets/images/default_plant.jpg',
-                  name: plantName,
-                  details: details, // Show common names instead of description
-                  isNetworkImage: imageUrl.isNotEmpty,
-                  onTap: () {
-                    _navigateToPlantDetails(plantName);
-                  },
-                ),
-              );
-            }).toList(),
-          );
-  }
-
-  // Helper function to build plant tile (Supports Network & Local Images)
-  Widget _buildPlantTile({
-    required String imagePath,
-    required String name,
-    required String details,
-    bool isNetworkImage = false, // Flag for network images
-    required VoidCallback onTap, // On tap callback for navigation
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(13.0),
-      margin: const EdgeInsets.symmetric(vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      child: Row(
-        children: [
-          ClipOval(
-            child: isNetworkImage
-                ? Image.network(
-                    imagePath,
-                    height: 75,
-                    width: 75,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Image.asset(
-                        'assets/images/default_plant.jpg',
-                        height: 75,
-                        width: 75,
-                        fit: BoxFit.cover,
-                      );
-                    },
-                  )
-                : Image.asset(
-                    imagePath,
-                    height: 75,
-                    width: 75,
-                    fit: BoxFit.cover,
-                  ),
-          ),
-          const SizedBox(width: 15),
-
-          // Prevents text overflow
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green[800],
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  details,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black54,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 2,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Method to handle navigation to PlantDetailsScreen
-  void _navigateToPlantDetails(String plantName) async {
-    final plantData = await fetchPlantFromBackend(plantName);
-
-    if (plantData != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PlantDetailsScreen(
-            plantName: plantName,
-            imageUrl: plantData['image']['value'] ?? '',
-            plantDescription: plantData['description']?['value'] ?? '',
-            commonNames: List<String>.from(plantData['common_names'] ?? []),
-            edibleParts: List<String>.from(plantData['edible_parts'] ?? []),
-            propagationMethods:
-                List<String>.from(plantData['propagation_methods'] ?? []),
-            watering: plantData['watering'] ?? {"min": 0, "max": 0},
-            wikiUrl: plantData['url'] ?? '',
-          ),
-        ),
-      );
-    } else {
-      // Handle null data case
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to fetch plant data.')),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -302,53 +85,137 @@ class _PlantSearchScreenState extends State<PlantSearchScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              // Search Bar
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(25.0),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.search, color: Colors.green[800]),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: "Search for a plant...",
-                          border: InputBorder.none,
-                        ),
-                        onChanged: (query) {
-                          if (query.isNotEmpty) {
+              // Search Bar with Cross Icon
+              TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  prefixIcon: Icon(Icons.search, color: Colors.green[800]),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: Icon(Icons.clear, color: Colors.grey),
+                          onPressed: () {
                             setState(() {
-                              _hasSearched = true;
+                              _searchController.clear();
+                              _searchResults.clear();
+                              _hasSearched = false;
                             });
-                          }
-                        },
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.search, color: Colors.green[800]),
-                      onPressed: searchPlant,
-                    ),
-                  ],
+                          },
+                        )
+                      : null,
+                  hintText: "Search for a plant...",
+                  filled: true,
+                  fillColor: Colors.grey.shade200,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(25.0),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
+                onChanged: (value) {
+                  setState(() {});
+                },
+                onSubmitted: (_) => searchPlant(),
               ),
               const SizedBox(height: 20),
-
-              // Show "Common Household Plants" if no search results
               _hasSearched && !_isLoading && _searchResults.isEmpty
-                  ? _buildHouseholdPlants()
-                  : _buildSearchResults(),
+                  ? Center(
+                      child: Text(
+                        "No plant found.",
+                        style: TextStyle(fontSize: 16, color: Colors.black54),
+                      ),
+                    )
+                  : Column(
+                      children: _searchResults.map((plant) {
+                        final plantName =
+                            plant['query_name'] ?? 'Unknown Plant';
+                        final commonNames = (plant['common_names'] != null &&
+                                plant['common_names'].isNotEmpty)
+                            ? plant['common_names'].join(", ")
+                            : 'No common names available';
+                        final imageUrl = (plant['image'] != null &&
+                                plant['image']['value'] != null)
+                            ? plant['image']['value']
+                            : '';
 
-              // Show loading spinner if searching
-              if (_isLoading)
-                Center(
-                  child: CircularProgressIndicator(),
-                ),
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PlantDetailsScreen(
+                                  plantName: plantName,
+                                  imageUrl: imageUrl,
+                                  plantDescription:
+                                      plant['description']?['value'] ?? '',
+                                  commonNames: List<String>.from(
+                                      plant['common_names'] ?? []),
+                                  edibleParts: List<String>.from(
+                                      plant['edible_parts'] ?? []),
+                                  propagationMethods: List<String>.from(
+                                      plant['propagation_methods'] ?? []),
+                                  watering:
+                                      plant['watering'] ?? {"min": 0, "max": 0},
+                                  wikiUrl: plant['url'] ?? '',
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(13.0),
+                            margin: const EdgeInsets.symmetric(vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            child: Row(
+                              children: [
+                                ClipOval(
+                                  child: imageUrl.isNotEmpty
+                                      ? Image.network(
+                                          imageUrl,
+                                          height: 75,
+                                          width: 75,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Image.asset(
+                                          'assets/images/default_plant.jpg',
+                                          height: 75,
+                                          width: 75,
+                                          fit: BoxFit.cover,
+                                        ),
+                                ),
+                                const SizedBox(width: 15),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        plantName,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.green[800],
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                      Text(
+                                        commonNames,
+                                        style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.black54),
+                                        softWrap: true,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+              if (_isLoading) Center(child: CircularProgressIndicator()),
             ],
           ),
         ),
